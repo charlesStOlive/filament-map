@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentMap\Filament\Concerns;
 
 use CharlesStOlive\FilamentMap\Support\PermissionManager;
+use Illuminate\Database\Eloquent\Model;
 
 trait HasMapResourceAuthorization
 {
@@ -21,17 +22,17 @@ trait HasMapResourceAuthorization
         return static::canPerformSpecificAction('create');
     }
 
-    public static function canView($record): bool
+    public static function canView(Model $record): bool
     {
         return static::canPerformSpecificAction('view');
     }
 
-    public static function canEdit($record): bool
+    public static function canEdit(Model $record): bool
     {
         return static::canPerformSpecificAction('edit');
     }
 
-    public static function canDelete($record): bool
+    public static function canDelete(Model $record): bool
     {
         return static::canPerformSpecificAction('delete');
     }
@@ -41,7 +42,7 @@ trait HasMapResourceAuthorization
         return static::canPerformSpecificAction('delete');
     }
 
-    public static function canForceDelete($record): bool
+    public static function canForceDelete(Model $record): bool
     {
         return static::canPerformSpecificAction('delete');
     }
@@ -51,7 +52,12 @@ trait HasMapResourceAuthorization
         return static::canPerformSpecificAction('delete');
     }
 
-    public static function canRestore($record): bool
+    public static function canReplicate(Model $record): bool
+    {
+        return static::canPerformSpecificAction('create');
+    }
+
+    public static function canRestore(Model $record): bool
     {
         return static::canPerformSpecificAction('edit');
     }

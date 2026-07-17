@@ -8,8 +8,7 @@ trait HasMapClusterAuthorization
 {
     public static function canAccess(): bool
     {
-        return PermissionManager::can(static::clusterPermission() . '.viewany')
-            || PermissionManager::can(static::clusterPermission() . '.*');
+        return PermissionManager::can(static::clusterPermission() . '.*');
     }
 
     public static function canViewAny(): bool

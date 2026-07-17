@@ -50,6 +50,10 @@ class FilamentMapPlugin implements Plugin
         }
 
         $panel->resources($resources);
+        $panel->discoverClusters(
+            in: __DIR__ . '/Filament/Clusters',
+            for: 'CharlesStOlive\\FilamentMap\\Filament\\Clusters',
+        );
     }
 
     public function boot(Panel $panel): void

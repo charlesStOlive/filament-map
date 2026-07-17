@@ -3,8 +3,11 @@
 namespace CharlesStOlive\FilamentMap\Filament\Clusters;
 
 use BackedEnum;
+use Illuminate\Contracts\Support\Htmlable;
+use UnitEnum;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapClusterAuthorization;
 use Filament\Clusters\Cluster;
+use Filament\Panel;
 
 class MapCluster extends Cluster
 {
@@ -16,17 +19,17 @@ class MapCluster extends Cluster
         return config('filament-map.cluster.label', 'Cartographie');
     }
 
-    public static function getSlug(): string
+    public static function getSlug(?Panel $panel = null): string
     {
         return config('filament-map.cluster.slug', 'cartographie');
     }
 
-    public static function getNavigationIcon(): string | BackedEnum | null
+    public static function getNavigationIcon(): string | BackedEnum | Htmlable | null
     {
         return config('filament-map.cluster.icon', 'heroicon-o-map');
     }
 
-    public static function getNavigationGroup(): string | null
+    public static function getNavigationGroup(): string | UnitEnum | null
     {
         return config('filament-map.cluster.navigation_group');
     }
