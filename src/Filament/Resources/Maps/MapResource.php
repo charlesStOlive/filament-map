@@ -1,0 +1,113 @@
+<?php
+
+namespace CharlesStOlive\FilamentMap\Filament\Resources\Maps;
+
+use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
+use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
+use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\CreateMap;
+use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\EditMap;
+use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\ListMaps;
+use CharlesStOlive\FilamentMap\Models\Map;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+
+class MapResource extends Resource
+{
+    use HasMapResourceAuthorization;
+
+    public static array $specificPermissions = ['preview', 'attach-point', 'detach-point'];
+    protected static ?string $model = Map::class;
+
+    protected static ?string $cluster = MapCluster::class;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('Carte')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Nom')
+                        ->required()
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn (?string $state, callable $set) => $set('slug', Str::slug($state ?? ''))),
+                    TextInput::make('slug')
+                        ->required()
+                        ->unique(ignoreRecord: true),
+                    Select::make('mode')
+                        ->options([
+                            'geojson' => 'GeoJSON stylise',
+                            'openstreetmap' => 'OpenStreetMap',
+                            'hybrid' => 'Hybride',
+                            'svg_overlay' => 'SVG georeference',
+                        ])
+                        ->default('geojson')
+                        ->required(),
+                    Toggle::make('is_active')
+                        ->label('Active')
+                        ->default(true),
+                    Textarea::make('description')
+                        ->columnSpanFull(),
+                ]),
+            Section::make('Vue initiale')
+                ->columns(3)
+                ->schema([
+                    TextInput::make('center_latitude')->numeric()->step('0.0000001'),
+                    TextInput::make('center_longitude')->numeric()->step('0.0000001'),
+                    TextInput::make('zoom')->numeric()->minValue(0)->maxValue(22),
+                    TextInput::make('min_zoom')->numeric()->minValue(0)->maxValue(22),
+                    TextInput::make('max_zoom')->numeric()->minValue(0)->maxValue(22),
+                ]),
+            Section::make('Options')
+                ->schema([
+                    KeyValue::make('bounds')->label('Bounds'),
+                    KeyValue::make('options'),
+                ]),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('name')->label('Nom')->searchable()->sortable(),
+                TextColumn::make('mode')->badge()->sortable(),
+                TextColumn::make('layers_count')->counts('layers')->label('Couches'),
+                TextColumn::make('points_count')->counts('points')->label('Points'),
+                IconColumn::make('is_active')->label('Active')->boolean(),
+                TextColumn::make('updated_at')->dateTime()->sortable(),
+            ])
+            ->recordActions([
+                EditAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListMaps::route('/'),
+            'create' => CreateMap::route('/create'),
+            'edit' => EditMap::route('/{record}/edit'),
+        ];
+    }
+}

@@ -2,6 +2,10 @@
 
 namespace CharlesStOlive\FilamentMap;
 
+use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\GeoPointResource;
+use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\GeoPointTypeResource;
+use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\MapLayerResource;
+use CharlesStOlive\FilamentMap\Filament\Resources\Maps\MapResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -27,7 +31,25 @@ class FilamentMapPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        //
+        $resources = [];
+
+        if (config('filament-map.resources.maps', true)) {
+            $resources[] = MapResource::class;
+        }
+
+        if (config('filament-map.resources.layers', true)) {
+            $resources[] = MapLayerResource::class;
+        }
+
+        if (config('filament-map.resources.geo_points', true)) {
+            $resources[] = GeoPointResource::class;
+        }
+
+        if (config('filament-map.resources.geo_point_types', true)) {
+            $resources[] = GeoPointTypeResource::class;
+        }
+
+        $panel->resources($resources);
     }
 
     public function boot(Panel $panel): void
