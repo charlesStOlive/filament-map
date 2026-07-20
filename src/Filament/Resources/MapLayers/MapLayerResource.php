@@ -13,6 +13,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -72,9 +73,8 @@ class MapLayerResource extends Resource
                         ->label('Type de source')
                         ->options([
                             'url' => 'URL',
-                            'path' => 'Chemin publie',
-                            'json' => 'JSON',
-                            'media' => 'Media Library',
+                            'json' => 'JSON brut',
+                            'file' => 'Fichier uploadé',
                         ])
                         ->default('url')
                         ->required()
@@ -82,16 +82,31 @@ class MapLayerResource extends Resource
                     Toggle::make('is_active')->default(true),
                     TextInput::make('source_url')
                         ->label('URL source')
+                        ->helperText('URL distante ou URL publique Laravel, par exemple /storage/maps/asie-sudest.geojson. Les templates Leaflet {z}/{x}/{y}{r} sont acceptés.')
                         ->visible(fn(Get $get): bool => $get('source_type') === 'url')
                         ->live(onBlur: true)
                         ->columnSpanFull(),
-                    TextInput::make('source_path')
-                        ->label('Chemin source')
-                        ->visible(fn(Get $get): bool => $get('source_type') === 'path')
-                        ->live(onBlur: true)
+                    FileUpload::make('source_path')
+                        ->label('Fichier source')
+                        ->disk(config('filament-map.files.disk', 'public'))
+                        ->directory(config('filament-map.files.directory', 'filament-map/layers'))
+                        ->visibility('public')
+                        ->acceptedFileTypes([
+                            'application/json',
+                            'application/geo+json',
+                            'application/octet-stream',
+                            'text/json',
+                            'text/plain',
+                            'image/svg+xml',
+                        ])
+                        ->downloadable()
+                        ->openable()
+                        ->visible(fn(Get $get): bool => $get('source_type') === 'file')
+                        ->live()
                         ->columnSpanFull(),
                     Textarea::make('source_json')
                         ->label('Source JSON')
+                        ->helperText('GeoJSON collé directement. Pratique pour tester, moins adapté aux gros fichiers.')
                         ->rows(12)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
@@ -107,21 +122,21 @@ class MapLayerResource extends Resource
                         ->rows(10)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Style Leaflet global de la couche.')
+                        ->helperText('Style Leaflet appliqué par défaut à toutes les entités GeoJSON de la couche.')
                         ->live(onBlur: true),
                     Textarea::make('style_rules')
                         ->label('Règles JSON')
                         ->rows(10)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Règles conditionnelles selon les properties GeoJSON.')
+                        ->helperText('Overrides de style selon les properties GeoJSON, par exemple ADM0_A3 = KHM.')
                         ->live(onBlur: true),
                     Textarea::make('options')
                         ->label('Options JSON')
                         ->rows(10)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Options passées au layer Leaflet.')
+                        ->helperText('Options techniques Leaflet. À laisser vide pour une simple coloration GeoJSON.')
                         ->live(onBlur: true),
                 ]),
             Section::make('Aperçu')

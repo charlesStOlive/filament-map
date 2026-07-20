@@ -100,11 +100,65 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
         },
 
         sourceUrl(layer) {
-            if (layer.sourceType === 'path') {
-                return layer.sourcePath
+            if (layer.sourceType === 'file' || layer.sourceType === 'path') {
+                return this.publicFileUrl(layer.sourcePath)
             }
 
-            return layer.sourceUrl
+            return this.textUrl(layer.sourceUrl)
+        },
+
+        textUrl(value) {
+            return typeof value === 'string' && value.trim() !== '' ? value : null
+        },
+
+        publicFileUrl(value) {
+            const path = this.extractStoredPath(value)
+
+            if (!path) {
+                return null
+            }
+
+            if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('/')) {
+                return path
+            }
+
+            return `${config.files?.urlPrefix ?? '/storage/'}${path.replace(/^\/+/, '')}`
+        },
+
+        extractStoredPath(value) {
+            if (typeof value === 'string') {
+                return value.trim() === '' ? null : value
+            }
+
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    const path = this.extractStoredPath(item)
+
+                    if (path) {
+                        return path
+                    }
+                }
+            }
+
+            if (value && typeof value === 'object') {
+                for (const key of ['path', 'url', 'previewUrl', 'preview_url']) {
+                    const path = this.extractStoredPath(value[key])
+
+                    if (path) {
+                        return path
+                    }
+                }
+
+                for (const item of Object.values(value)) {
+                    const path = this.extractStoredPath(item)
+
+                    if (path) {
+                        return path
+                    }
+                }
+            }
+
+            return null
         },
 
         previewTile(layer) {
@@ -150,7 +204,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             const url = this.sourceUrl(layer)
 
             if (!url) {
-                this.message = 'Ajoute une URL ou un chemin GeoJSON.'
+                this.message = layer.sourceType === 'file' ? 'Enregistre le layer après upload pour prévisualiser le fichier.' : 'Ajoute une URL ou un fichier GeoJSON.'
                 return
             }
 

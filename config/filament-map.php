@@ -56,6 +56,11 @@ return [
         'js_url' => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     ],
 
+    'files' => [
+        'disk' => env('FILAMENT_MAP_FILESYSTEM_DISK', 'public'),
+        'directory' => 'filament-map/layers',
+    ],
+
     'media_collections' => [
         'map_preview' => 'map_preview',
         'layer_source' => 'layer_source',

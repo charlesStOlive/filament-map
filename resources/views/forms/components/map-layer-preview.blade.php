@@ -32,6 +32,9 @@
                 url: @js(config('filament-map.tiles.url')),
                 attribution: @js(config('filament-map.tiles.attribution')),
             },
+            files: {
+                urlPrefix: @js(rtrim(\Illuminate\Support\Facades\Storage::disk(config('filament-map.files.disk', 'public'))->url(''), '/') . '/'),
+            },
         })"
         x-init="init()"
         class="space-y-3"

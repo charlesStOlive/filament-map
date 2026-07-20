@@ -30,7 +30,7 @@ class MapLayerAssignment extends Model
 
     public function getTable(): string
     {
-        return config('filament-map.tables.map_layers', parent::getTable());
+        return config('filament-map.tables.map_layers', 'filament_map_map_layer');
     }
 
     public function map(): BelongsTo

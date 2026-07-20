@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentMap\Services;
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
+use Illuminate\Support\Facades\Storage;
 
 class MapPayloadBuilder
 {
@@ -87,10 +88,44 @@ class MapPayloadBuilder
 
         return match ($layer->source_type) {
             'url' => ['type' => 'url', 'url' => $layer->source_url],
-            'path' => ['type' => 'url', 'url' => $layer->source_path],
+            'file', 'path' => ['type' => 'url', 'url' => $this->storedFileUrl($layer->source_path)],
             'json' => ['type' => 'json', 'data' => $layer->source_json],
             default => ['type' => null],
         };
+    }
+
+    protected function storedFileUrl(mixed $path): ?string
+    {
+        $path = $this->normalizeStoredPath($path);
+
+        if (! filled($path)) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        return Storage::disk(config('filament-map.files.disk', 'public'))->url($path);
+    }
+
+    protected function normalizeStoredPath(mixed $path): ?string
+    {
+        if (is_string($path)) {
+            return $path;
+        }
+
+        if (is_array($path)) {
+            foreach ($path as $value) {
+                $normalized = $this->normalizeStoredPath($value);
+
+                if (filled($normalized)) {
+                    return $normalized;
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function point(GeoPoint $point): array
