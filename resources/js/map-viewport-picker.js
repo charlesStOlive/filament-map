@@ -38,7 +38,6 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                     this.syncFromMarker()
                 })
 
-                this.fitConfiguredBounds()
                 this.syncSummary()
             }
 
@@ -84,8 +83,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
 
             if (config.syncBounds) {
                 const bounds = this.map.getBounds()
-
-                this.setField(config.boundsPath, {
+                const payload = {
                     southWest: {
                         lat: Number(bounds.getSouthWest().lat.toFixed(7)),
                         lng: Number(bounds.getSouthWest().lng.toFixed(7)),
@@ -94,14 +92,16 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                         lat: Number(bounds.getNorthEast().lat.toFixed(7)),
                         lng: Number(bounds.getNorthEast().lng.toFixed(7)),
                     },
-                })
+                }
+
+                this.setField(config.boundsPath, JSON.stringify(payload, null, 2))
             }
 
             this.syncSummary()
         },
 
         fitConfiguredBounds() {
-            const bounds = this.getField(config.boundsPath)
+            const bounds = this.parseBounds(this.getField(config.boundsPath))
 
             if (!bounds?.southWest || !bounds?.northEast) {
                 return
@@ -111,6 +111,22 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 [bounds.southWest.lat, bounds.southWest.lng],
                 [bounds.northEast.lat, bounds.northEast.lng],
             ], { padding: [24, 24] })
+        },
+
+        parseBounds(value) {
+            if (!value) {
+                return null
+            }
+
+            if (typeof value === 'object') {
+                return value
+            }
+
+            try {
+                return JSON.parse(value)
+            } catch (error) {
+                return null
+            }
         },
 
         syncSummary() {

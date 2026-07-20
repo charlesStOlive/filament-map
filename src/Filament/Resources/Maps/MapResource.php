@@ -13,6 +13,8 @@ use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CodeEditor;
+use Filament\Forms\Components\CodeEditor\Enums\Language;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Components\Section;
@@ -133,12 +135,13 @@ class MapResource extends Resource
             Section::make('Options')
                 ->collapsed()
                 ->schema([
-                    Textarea::make('bounds')
-                        ->label('Bounds')
-                        ->rows(6)
+                    CodeEditor::make('bounds')
+                        ->label('Bounds JSON')
+                        ->language(Language::Json)
+                        ->wrap()
                         ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Rempli automatiquement depuis la carte interactive.'),
+                        ->helperText('Zone visible de la carte, remplie par la vue interactive. Le centre et le zoom restent les valeurs de démarrage.'),
                     KeyValue::make('options'),
                 ]),
         ]);
