@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\Maps;
 
 use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapViewportPicker;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\CreateMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\EditMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\ListMaps;
@@ -67,15 +68,29 @@ class MapResource extends Resource
             Section::make('Vue initiale')
                 ->columns(3)
                 ->schema([
-                    TextInput::make('center_latitude')->numeric()->step('0.0000001'),
-                    TextInput::make('center_longitude')->numeric()->step('0.0000001'),
-                    TextInput::make('zoom')->numeric()->minValue(0)->maxValue(22),
+                    TextInput::make('center_latitude')->numeric()->step('0.0000001')->live(onBlur: true),
+                    TextInput::make('center_longitude')->numeric()->step('0.0000001')->live(onBlur: true),
+                    TextInput::make('zoom')->numeric()->minValue(0)->maxValue(22)->live(onBlur: true),
                     TextInput::make('min_zoom')->numeric()->minValue(0)->maxValue(22),
                     TextInput::make('max_zoom')->numeric()->minValue(0)->maxValue(22),
+                    MapViewportPicker::make('viewport_picker')
+                        ->label('Vue interactive')
+                        ->dehydrated(false)
+                        ->latitudeField('center_latitude')
+                        ->longitudeField('center_longitude')
+                        ->zoomField('zoom')
+                        ->boundsField('bounds')
+                        ->columnSpanFull(),
                 ]),
             Section::make('Options')
+                ->collapsed()
                 ->schema([
-                    KeyValue::make('bounds')->label('Bounds'),
+                    Textarea::make('bounds')
+                        ->label('Bounds')
+                        ->rows(6)
+                        ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->helperText('Rempli automatiquement depuis la carte interactive.'),
                     KeyValue::make('options'),
                 ]),
         ]);
