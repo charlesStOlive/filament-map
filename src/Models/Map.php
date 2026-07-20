@@ -50,9 +50,24 @@ class Map extends Model implements HasMedia
         return config('filament-map.tables.maps', parent::getTable());
     }
 
-    public function layers(): HasMany
+    public function layers(): BelongsToMany
     {
-        return $this->hasMany(MapLayer::class)->orderBy('sort_order');
+        return $this->belongsToMany(MapLayer::class, config('filament-map.tables.map_layers', 'filament_map_map_layer'))
+            ->withPivot([
+                'sort_order',
+                'is_visible_by_default',
+                'style',
+                'style_rules',
+                'options',
+            ])
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    public function layerAssignments(): HasMany
+    {
+        return $this->hasMany(MapLayerAssignment::class)
+            ->orderBy('sort_order');
     }
 
     public function points(): BelongsToMany

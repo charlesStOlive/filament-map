@@ -5,6 +5,8 @@ namespace CharlesStOlive\FilamentMap\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -14,7 +16,7 @@ class MapLayer extends Model implements HasMedia
     use InteractsWithMedia;
 
     protected $fillable = [
-        'map_id',
+        'preview_map_id',
         'name',
         'key',
         'type',
@@ -25,8 +27,6 @@ class MapLayer extends Model implements HasMedia
         'style',
         'style_rules',
         'options',
-        'sort_order',
-        'is_visible_by_default',
         'is_active',
     ];
 
@@ -37,8 +37,6 @@ class MapLayer extends Model implements HasMedia
             'style' => 'array',
             'style_rules' => 'array',
             'options' => 'array',
-            'sort_order' => 'integer',
-            'is_visible_by_default' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
@@ -48,9 +46,27 @@ class MapLayer extends Model implements HasMedia
         return config('filament-map.tables.layers', parent::getTable());
     }
 
-    public function map(): BelongsTo
+    public function previewMap(): BelongsTo
     {
-        return $this->belongsTo(Map::class);
+        return $this->belongsTo(Map::class, 'preview_map_id');
+    }
+
+    public function maps(): BelongsToMany
+    {
+        return $this->belongsToMany(Map::class, config('filament-map.tables.map_layers', 'filament_map_map_layer'))
+            ->withPivot([
+                'sort_order',
+                'is_visible_by_default',
+                'style',
+                'style_rules',
+                'options',
+            ])
+            ->withTimestamps();
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(MapLayerAssignment::class);
     }
 
     public function registerMediaCollections(): void

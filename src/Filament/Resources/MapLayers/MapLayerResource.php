@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\MapLayers;
 
 use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapLayerPreview;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\Pages\CreateMapLayer;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\Pages\EditMapLayer;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\Pages\ListMapLayers;
@@ -11,17 +12,18 @@ use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\KeyValue;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class MapLayerResource extends Resource
 {
@@ -40,9 +42,21 @@ class MapLayerResource extends Resource
             Section::make('Couche')
                 ->columns(2)
                 ->schema([
-                    Select::make('map_id')->relationship('map', 'name')->required()->searchable()->preload(),
-                    TextInput::make('name')->label('Nom')->required(),
-                    TextInput::make('key')->required(),
+                    Select::make('preview_map_id')
+                        ->label('Carte d’exemple')
+                        ->relationship('previewMap', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->live()
+                        ->helperText('Utilisée uniquement pour prévisualiser la couche.'),
+                    TextInput::make('name')
+                        ->label('Nom')
+                        ->required()
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn (?string $state, callable $set) => $set('key', Str::slug($state ?? ''))),
+                    TextInput::make('key')
+                        ->required()
+                        ->unique(ignoreRecord: true),
                     Select::make('type')
                         ->options([
                             'geojson' => 'GeoJSON',
@@ -52,29 +66,70 @@ class MapLayerResource extends Resource
                             'custom' => 'Custom',
                         ])
                         ->default('geojson')
-                        ->required(),
+                        ->required()
+                        ->live(),
                     Select::make('source_type')
+                        ->label('Type de source')
                         ->options([
                             'url' => 'URL',
                             'path' => 'Chemin publie',
                             'json' => 'JSON',
                             'media' => 'Media Library',
-                        ]),
-                    TextInput::make('sort_order')->numeric()->default(0),
-                    Toggle::make('is_visible_by_default')->default(true),
+                        ])
+                        ->default('url')
+                        ->required()
+                        ->live(),
                     Toggle::make('is_active')->default(true),
-                ]),
-            Section::make('Source')
-                ->schema([
-                    TextInput::make('source_url')->url(),
-                    TextInput::make('source_path'),
-                    Textarea::make('source_json')->rows(8),
+                    TextInput::make('source_url')
+                        ->label('URL source')
+                        ->visible(fn(Get $get): bool => $get('source_type') === 'url')
+                        ->live(onBlur: true)
+                        ->columnSpanFull(),
+                    TextInput::make('source_path')
+                        ->label('Chemin source')
+                        ->visible(fn(Get $get): bool => $get('source_type') === 'path')
+                        ->live(onBlur: true)
+                        ->columnSpanFull(),
+                    Textarea::make('source_json')
+                        ->label('Source JSON')
+                        ->rows(12)
+                        ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->visible(fn(Get $get): bool => $get('source_type') === 'json')
+                        ->live(onBlur: true)
+                        ->columnSpanFull(),
                 ]),
             Section::make('Style et options')
+                ->columns(3)
                 ->schema([
-                    KeyValue::make('style'),
-                    KeyValue::make('style_rules'),
-                    KeyValue::make('options'),
+                    Textarea::make('style')
+                        ->label('Style JSON')
+                        ->rows(10)
+                        ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->helperText('Style Leaflet global de la couche.')
+                        ->live(onBlur: true),
+                    Textarea::make('style_rules')
+                        ->label('Règles JSON')
+                        ->rows(10)
+                        ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->helperText('Règles conditionnelles selon les properties GeoJSON.')
+                        ->live(onBlur: true),
+                    Textarea::make('options')
+                        ->label('Options JSON')
+                        ->rows(10)
+                        ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->helperText('Options passées au layer Leaflet.')
+                        ->live(onBlur: true),
+                ]),
+            Section::make('Aperçu')
+                ->schema([
+                    MapLayerPreview::make('layer_preview')
+                        ->label('Preview du layer')
+                        ->dehydrated(false)
+                        ->columnSpanFull(),
                 ]),
         ]);
     }
@@ -83,11 +138,9 @@ class MapLayerResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('map.name')->label('Carte')->searchable()->sortable(),
                 TextColumn::make('name')->label('Nom')->searchable()->sortable(),
+                TextColumn::make('previewMap.name')->label('Carte d’exemple')->toggleable(),
                 TextColumn::make('type')->badge()->sortable(),
-                TextColumn::make('sort_order')->sortable(),
-                IconColumn::make('is_visible_by_default')->boolean(),
                 IconColumn::make('is_active')->boolean(),
             ])
             ->recordActions([

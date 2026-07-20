@@ -6,6 +6,7 @@ return [
         'layers' => 'filament_map_layers',
         'geo_points' => 'filament_map_geo_points',
         'geo_point_types' => 'filament_map_geo_point_types',
+        'map_layers' => 'filament_map_map_layer',
         'map_geo_point' => 'filament_map_geo_map_point',
     ],
 

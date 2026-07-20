@@ -42,7 +42,7 @@ return new class extends Migration
 
         Schema::create(config('filament-map.tables.layers', 'filament_map_layers'), function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('map_id')->constrained(config('filament-map.tables.maps', 'filament_map_maps'))->cascadeOnDelete();
+            $table->foreignId('preview_map_id')->nullable()->constrained(config('filament-map.tables.maps', 'filament_map_maps'))->nullOnDelete();
             $table->string('name');
             $table->string('key');
             $table->string('type')->default('geojson');
@@ -53,12 +53,24 @@ return new class extends Migration
             $table->json('style')->nullable();
             $table->json('style_rules')->nullable();
             $table->json('options')->nullable();
-            $table->unsignedInteger('sort_order')->default(0)->index();
-            $table->boolean('is_visible_by_default')->default(true)->index();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
 
-            $table->unique(['map_id', 'key']);
+            $table->unique('key');
+        });
+
+        Schema::create(config('filament-map.tables.map_layers', 'filament_map_map_layer'), function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('map_id')->constrained(config('filament-map.tables.maps', 'filament_map_maps'))->cascadeOnDelete();
+            $table->foreignId('map_layer_id')->constrained(config('filament-map.tables.layers', 'filament_map_layers'))->cascadeOnDelete();
+            $table->unsignedInteger('sort_order')->default(0)->index();
+            $table->boolean('is_visible_by_default')->default(true)->index();
+            $table->json('style')->nullable();
+            $table->json('style_rules')->nullable();
+            $table->json('options')->nullable();
+            $table->timestamps();
+
+            $table->unique(['map_id', 'map_layer_id']);
         });
 
         Schema::create(config('filament-map.tables.geo_points', 'filament_map_geo_points'), function (Blueprint $table): void {
@@ -101,6 +113,7 @@ return new class extends Migration
     {
         Schema::dropIfExists(config('filament-map.tables.map_geo_point', 'filament_map_geo_map_point'));
         Schema::dropIfExists(config('filament-map.tables.geo_points', 'filament_map_geo_points'));
+        Schema::dropIfExists(config('filament-map.tables.map_layers', 'filament_map_map_layer'));
         Schema::dropIfExists(config('filament-map.tables.layers', 'filament_map_layers'));
         Schema::dropIfExists(config('filament-map.tables.geo_point_types', 'filament_map_geo_point_types'));
         Schema::dropIfExists(config('filament-map.tables.maps', 'filament_map_maps'));

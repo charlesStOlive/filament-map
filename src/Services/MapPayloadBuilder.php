@@ -5,7 +5,6 @@ namespace CharlesStOlive\FilamentMap\Services;
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
-use Illuminate\Support\Arr;
 
 class MapPayloadBuilder
 {
@@ -59,18 +58,19 @@ class MapPayloadBuilder
 
     protected function layer(MapLayer $layer): array
     {
+        $pivot = $layer->pivot;
+
         return [
             'id' => $layer->getKey(),
-            'mapId' => $layer->map_id,
             'name' => $layer->name,
             'key' => $layer->key,
             'type' => $layer->type,
-            'visible' => $layer->is_visible_by_default,
+            'visible' => (bool) ($pivot?->is_visible_by_default ?? true),
             'source' => $this->layerSource($layer),
-            'style' => $layer->style ?? [],
-            'styleRules' => $layer->style_rules ?? [],
-            'options' => $layer->options ?? [],
-            'sortOrder' => $layer->sort_order,
+            'style' => array_replace_recursive($layer->style ?? [], $this->pivotJson($pivot?->style)),
+            'styleRules' => array_replace_recursive($layer->style_rules ?? [], $this->pivotJson($pivot?->style_rules)),
+            'options' => array_replace_recursive($layer->options ?? [], $this->pivotJson($pivot?->options)),
+            'sortOrder' => $pivot?->sort_order ?? 0,
         ];
     }
 
@@ -100,7 +100,7 @@ class MapPayloadBuilder
         $markerStyle = array_replace_recursive(
             $type?->marker_style ?? [],
             $point->marker_style ?? [],
-            Arr::wrap($pivot?->marker_style),
+            $this->pivotJson($pivot?->marker_style),
         );
 
         return [
@@ -120,9 +120,24 @@ class MapPayloadBuilder
             'color' => $point->options['color'] ?? $type?->color,
             'image' => $this->markerImage($point),
             'style' => $markerStyle,
-            'options' => array_replace_recursive($point->options ?? [], Arr::wrap($pivot?->options)),
+            'options' => array_replace_recursive($point->options ?? [], $this->pivotJson($pivot?->options)),
             'sortOrder' => $pivot?->sort_order ?? 0,
         ];
+    }
+
+    protected function pivotJson(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && filled($value)) {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
     }
 
     protected function markerImage(GeoPoint $point): ?string

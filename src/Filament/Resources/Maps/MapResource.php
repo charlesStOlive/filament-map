@@ -9,10 +9,12 @@ use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\CreateMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\EditMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\ListMaps;
 use CharlesStOlive\FilamentMap\Models\Map;
+use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -81,6 +83,52 @@ class MapResource extends Resource
                         ->zoomField('zoom')
                         ->boundsField('bounds')
                         ->columnSpanFull(),
+                ]),
+            Section::make('Couches de la carte')
+                ->schema([
+                    Repeater::make('layerAssignments')
+                        ->label('Layers')
+                        ->relationship()
+                        ->orderColumn('sort_order')
+                        ->schema([
+                            Select::make('map_layer_id')
+                                ->label('Layer')
+                                ->relationship('layer', 'name')
+                                ->required()
+                                ->searchable()
+                                ->preload()
+                                ->columnSpanFull(),
+                            TextInput::make('sort_order')
+                                ->label('Ordre')
+                                ->numeric()
+                                ->default(0),
+                            Toggle::make('is_visible_by_default')
+                                ->label('Visible')
+                                ->default(true),
+                            Textarea::make('style')
+                                ->label('Override style JSON')
+                                ->rows(5)
+                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                            Textarea::make('style_rules')
+                                ->label('Override règles JSON')
+                                ->rows(5)
+                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                            Textarea::make('options')
+                                ->label('Override options JSON')
+                                ->rows(5)
+                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                        ])
+                        ->columns(2)
+                        ->defaultItems(0)
+                        ->addActionLabel('Ajouter une couche')
+                        ->reorderable()
+                        ->collapsible()
+                        ->itemLabel(fn (array $state): ?string => filled($state['map_layer_id'] ?? null)
+                            ? MapLayer::query()->find($state['map_layer_id'])?->name
+                            : null),
                 ]),
             Section::make('Options')
                 ->collapsed()
