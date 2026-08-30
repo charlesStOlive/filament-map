@@ -41,16 +41,29 @@ export function addGeoJsonLayer(map, layer) {
     if (layer.source?.type === 'url' && layer.source.url) {
         const placeholderLayer = L.geoJSON(null)
 
+        if (layer.visible) {
+            placeholderLayer.addTo(map)
+        }
+
         fetch(layer.source.url)
-            .then((response) => response.json())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`)
+                }
+
+                return response.json()
+            })
             .then((data) => {
+                if (placeholderLayer.filamentMapDisposed) {
+                    return
+                }
+
                 placeholderLayer.addData(data)
                 placeholderLayer.setStyle(applyStyleRules)
 
-                if (layer.visible) {
-                    placeholderLayer.addTo(map)
-                }
+                placeholderLayer.fire('filament-map:ready')
             })
+            .catch((error) => placeholderLayer.fire('filament-map:error', { error }))
 
         return placeholderLayer
     }

@@ -8,6 +8,7 @@ use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapViewportPicker;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\CreateMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\EditMap;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\ListMaps;
+use CharlesStOlive\FilamentMap\Livewire\MapViewer;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Filament\Actions\BulkActionGroup;
@@ -17,12 +18,13 @@ use Filament\Forms\Components\CodeEditor;
 use Filament\Forms\Components\CodeEditor\Enums\Language;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Livewire as LivewireComponent;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -34,6 +36,7 @@ class MapResource extends Resource
     use HasMapResourceAuthorization;
 
     public static array $specificPermissions = ['preview', 'attach-point', 'detach-point'];
+
     protected static ?string $model = Map::class;
 
     protected static ?string $cluster = MapCluster::class;
@@ -132,6 +135,21 @@ class MapResource extends Resource
                             ? MapLayer::query()->find($state['map_layer_id'])?->name
                             : null),
                 ]),
+            Section::make('Aperçu de la carte enregistrée')
+                ->description('Affiche les layers et les points déjà sauvegardés. Enregistre le formulaire puis actualise cet aperçu pour voir les dernières modifications.')
+                ->schema([
+                    LivewireComponent::make(
+                        MapViewer::class,
+                        fn (?Map $record): array => [
+                            'map' => $record,
+                            'eventScope' => $record ? 'map-'.$record->getKey() : null,
+                            'height' => 'h-[520px]',
+                            'showRefresh' => true,
+                        ],
+                    )
+                        ->key(fn (?Map $record): string => 'filament-map-preview-'.($record?->getKey() ?? 'new')),
+                ])
+                ->visible(fn (?Map $record): bool => (bool) $record?->exists),
             Section::make('Options')
                 ->collapsed()
                 ->schema([

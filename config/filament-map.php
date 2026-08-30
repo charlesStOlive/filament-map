@@ -1,45 +1,28 @@
 <?php
 
 return [
-    'tables' => [
-        'maps' => 'filament_map_maps',
-        'layers' => 'filament_map_layers',
-        'geo_points' => 'filament_map_geo_points',
-        'geo_point_types' => 'filament_map_geo_point_types',
-        'map_layers' => 'filament_map_map_layer',
-        'map_geo_point' => 'filament_map_geo_map_point',
-    ],
 
-    'cluster' => [
-        'enabled' => true,
-        'label' => 'Cartographie',
-        'slug' => 'cartographie',
-        'icon' => 'heroicon-o-map',
-        'navigation_group' => null,
-        'navigation_sort' => null,
-    ],
-
-    'resources' => [
-        'maps' => true,
-        'layers' => true,
-        'geo_points' => true,
-        'geo_point_types' => true,
-    ],
-
-    'authorization' => [
-        'enabled' => true,
-        'driver' => 'filament-permission-manager',
-        'allow_without_permission_manager' => true,
-        'permission_cluster' => null,
-    ],
-
+    /*
+    |--------------------------------------------------------------------------
+    | Default tile provider
+    |--------------------------------------------------------------------------
+    |
+    | The default tile provider to use for maps.
+    | Supported: "openstreetmap", "mapbox", "google"
+    |
+    */
     'tiles' => [
         'provider' => 'openstreetmap',
         'url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        'token' => env('FILAMENT_MAP_TOKEN'),
+        'token' => env('FILAMENT_MAP_TOKEN', null),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default map options
+    |--------------------------------------------------------------------------
+    */
     'default' => [
         'lat' => 48.8566,
         'lng' => 2.3522,
@@ -50,21 +33,15 @@ return [
         'width' => 'w-full',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Leaflet assets
+    |--------------------------------------------------------------------------
+    */
     'leaflet' => [
         'assets_path' => 'vendor/filament-map/filament-map.js',
         'css_url' => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
         'js_url' => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     ],
 
-    'files' => [
-        'disk' => env('FILAMENT_MAP_FILESYSTEM_DISK', 'public'),
-        'directory' => 'filament-map/layers',
-    ],
-
-    'media_collections' => [
-        'map_preview' => 'map_preview',
-        'layer_source' => 'layer_source',
-        'marker_image' => 'marker_image',
-        'default_marker_image' => 'default_marker_image',
-    ],
 ];

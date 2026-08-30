@@ -10,6 +10,7 @@ export class LeafletMapInstance {
         this.map = null
         this.layers = new Map()
         this.layerControl = null
+        this.handleMapClick = (event) => this.coordinatesPicked(event.latlng)
     }
 
     mount() {
@@ -22,24 +23,53 @@ export class LeafletMapInstance {
             ...(this.payload.map.options ?? {}),
         }).setView([center.lat, center.lng], this.payload.map.zoom)
 
+        this.configureInteraction()
         this.renderLayers()
         this.renderPoints()
+        this.renderLayerControl()
 
         if (this.payload.state?.fitBounds) {
             this.fitToVisibleContent()
         }
+
+        this.focusSelectedPoint()
     }
 
     update(payload) {
+        const previousMap = this.payload.map
         this.payload = payload
+
+        if (
+            previousMap.id !== payload.map.id
+            || previousMap.center?.lat !== payload.map.center?.lat
+            || previousMap.center?.lng !== payload.map.center?.lng
+            || previousMap.zoom !== payload.map.zoom
+        ) {
+            this.map.setView(
+                [payload.map.center.lat, payload.map.center.lng],
+                payload.map.zoom,
+            )
+        }
+
+        this.configureInteraction()
         this.clearLayers()
         this.renderLayers()
         this.renderPoints()
+        this.renderLayerControl()
+
+        if (this.payload.state?.fitBounds) {
+            this.fitToVisibleContent()
+        }
+
+        this.focusSelectedPoint()
     }
 
     destroy() {
+        this.map?.off('click', this.handleMapClick)
+        this.layerControl?.remove()
         this.map?.remove()
         this.map = null
+        this.layerControl = null
         this.layers.clear()
     }
 
@@ -61,20 +91,80 @@ export class LeafletMapInstance {
 
             if (leafletLayer) {
                 this.layers.set(layer.key, leafletLayer)
+
+                leafletLayer.on?.('filament-map:ready', () => {
+                    if (
+                        this.payload.state?.fitBounds
+                        && this.layers.get(layer.key) === leafletLayer
+                    ) {
+                        this.fitToVisibleContent()
+                    }
+                })
+
+                leafletLayer.on?.('filament-map:error', (event) => {
+                    window.dispatchEvent(new CustomEvent('filament-map:layer-error', {
+                        detail: {
+                            mapId: this.payload.map.id,
+                            scope: this.payload.state?.eventScope,
+                            layer,
+                            message: event.error?.message ?? 'Impossible de charger la couche.',
+                        },
+                    }))
+                })
             }
         }
     }
 
     renderPoints() {
-        const markerLayer = addMarkerLayer(this.map, this.payload.points ?? [])
+        const markerLayer = addMarkerLayer(this.map, this.payload.points ?? [], {
+            selectedPointId: this.payload.state?.selectedPointId,
+            onPointClick: (point) => this.pointClicked(point),
+        })
 
         if (markerLayer) {
             this.layers.set('__points', markerLayer)
         }
     }
 
+    renderLayerControl() {
+        if (!(this.payload.controls?.layers ?? true)) {
+            return
+        }
+
+        const baseLayers = {}
+        const overlays = {}
+
+        for (const layer of this.payload.layers ?? []) {
+            const leafletLayer = this.layers.get(layer.key)
+
+            if (!leafletLayer) {
+                continue
+            }
+
+            const label = layer.name || layer.key
+
+            if (layer.type === 'tile') {
+                baseLayers[label] = leafletLayer
+            } else {
+                overlays[label] = leafletLayer
+            }
+        }
+
+        if (this.layers.has('__points')) {
+            overlays.Points = this.layers.get('__points')
+        }
+
+        if (Object.keys(baseLayers).length || Object.keys(overlays).length) {
+            this.layerControl = L.control.layers(baseLayers, overlays).addTo(this.map)
+        }
+    }
+
     clearLayers() {
+        this.layerControl?.remove()
+        this.layerControl = null
+
         for (const layer of this.layers.values()) {
+            layer.filamentMapDisposed = true
             layer.removeFrom(this.map)
         }
 
@@ -82,10 +172,76 @@ export class LeafletMapInstance {
     }
 
     fitToVisibleContent() {
-        const group = L.featureGroup([...this.layers.values()])
+        const bounds = L.latLngBounds([])
 
-        if (group.getLayers().length > 0) {
-            this.map.fitBounds(group.getBounds(), { padding: [24, 24] })
+        for (const layer of this.layers.values()) {
+            if (!this.map.hasLayer(layer) || typeof layer.getBounds !== 'function') {
+                continue
+            }
+
+            const layerBounds = layer.getBounds()
+
+            if (layerBounds?.isValid()) {
+                bounds.extend(layerBounds)
+            }
+        }
+
+        if (bounds.isValid()) {
+            this.map.fitBounds(bounds, { padding: [24, 24] })
+        }
+    }
+
+    configureInteraction() {
+        this.map.off('click', this.handleMapClick)
+
+        if (this.payload.state?.interactive ?? true) {
+            this.map.on('click', this.handleMapClick)
+        }
+    }
+
+    focusSelectedPoint() {
+        const pointId = this.payload.state?.selectedPointId
+        const marker = this.layers.get('__points')?.getFilamentMarker?.(pointId)
+
+        if (!marker) {
+            return
+        }
+
+        this.map.panTo(marker.getLatLng())
+
+        if (marker.getPopup()) {
+            marker.openPopup()
+        } else if (marker.getTooltip()) {
+            marker.openTooltip()
+        }
+    }
+
+    coordinatesPicked(position) {
+        const detail = this.eventDetail({
+            lat: position.lat,
+            lng: position.lng,
+        })
+
+        window.dispatchEvent(new CustomEvent('filament-map:coordinates-picked', {
+            detail,
+        }))
+        window.Livewire?.dispatch?.('filament-map-coordinates-picked', detail)
+    }
+
+    pointClicked(point) {
+        const detail = this.eventDetail({ point })
+
+        window.dispatchEvent(new CustomEvent('filament-map:point-clicked', {
+            detail,
+        }))
+        window.Livewire?.dispatch?.('filament-map-point-clicked', detail)
+    }
+
+    eventDetail(detail = {}) {
+        return {
+            mapId: this.payload.map.id,
+            scope: this.payload.state?.eventScope,
+            ...detail,
         }
     }
 }

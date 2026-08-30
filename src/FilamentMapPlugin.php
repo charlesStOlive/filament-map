@@ -49,11 +49,12 @@ class FilamentMapPlugin implements Plugin
             $resources[] = GeoPointTypeResource::class;
         }
 
-        $panel->resources($resources);
-        $panel->discoverClusters(
-            in: __DIR__ . '/Filament/Clusters',
-            for: 'CharlesStOlive\\FilamentMap\\Filament\\Clusters',
-        );
+        $panel
+            ->resources($resources)
+            ->discoverClusters(
+                in: __DIR__ . '/Filament/Clusters',
+                for: 'CharlesStOlive\\FilamentMap\\Filament\\Clusters',
+            );
     }
 
     public function boot(Panel $panel): void

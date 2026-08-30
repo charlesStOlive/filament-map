@@ -1,5 +1,7 @@
-export function addMarkerLayer(map, points) {
-    const group = L.layerGroup()
+export function addMarkerLayer(map, points, context = {}) {
+    const group = L.featureGroup()
+    const markers = new Map()
+    let markerCount = 0
 
     for (const point of points) {
         if (point.visible === false || !point.position) {
@@ -9,6 +11,7 @@ export function addMarkerLayer(map, points) {
         const marker = L.marker([point.position.lat, point.position.lng], {
             title: point.name,
             ...(point.options?.marker ?? {}),
+            zIndexOffset: String(point.id) === String(context.selectedPointId) ? 1000 : (point.options?.marker?.zIndexOffset ?? 0),
         })
 
         if (point.tooltip) {
@@ -20,14 +23,19 @@ export function addMarkerLayer(map, points) {
         }
 
         marker.on('click', () => {
-            window.dispatchEvent(new CustomEvent('filament-map:point-clicked', {
-                detail: { point },
-            }))
+            context.onPointClick?.(point)
         })
 
         marker.addTo(group)
+        markers.set(String(point.id), marker)
+        markerCount += 1
     }
 
+    if (markerCount === 0) {
+        return null
+    }
+
+    group.getFilamentMarker = (pointId) => markers.get(String(pointId))
     group.addTo(map)
 
     return group

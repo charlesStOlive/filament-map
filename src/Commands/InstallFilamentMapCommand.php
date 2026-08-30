@@ -19,6 +19,12 @@ class InstallFilamentMapCommand extends Command
             '--tag' => 'filament-map-config',
         ]);
 
+        $this->comment('Publishing map assets...');
+        $this->callSilently('vendor:publish', [
+            '--tag' => 'filament-map-assets',
+            '--force' => true,
+        ]);
+
         $this->info('FilamentMap installed successfully.');
 
         return self::SUCCESS;

@@ -5,17 +5,24 @@ namespace CharlesStOlive\FilamentMap\Livewire;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class MapViewer extends Component
 {
     public int|string|null $mapId = null;
 
+    public ?string $eventScope = null;
+
     public array $points = [];
 
     public array $layers = [];
 
     public array $options = [];
+
+    public bool $replaceStoredPoints = false;
+
+    public bool $replaceStoredLayers = false;
 
     public string $height;
 
@@ -27,37 +34,177 @@ class MapViewer extends Component
 
     public bool $showControls = true;
 
+    public bool $showRefresh = false;
+
     public bool $fitBounds = false;
 
     public int|string|null $selectedPointId = null;
 
-    public function mount(Map|int|string|null $map = null, ?string $height = null, ?string $width = null, string $class = ''): void
-    {
+    public function mount(
+        Map|int|string|null $map = null,
+        Map|int|string|null $record = null,
+        ?string $height = null,
+        ?string $width = null,
+        string $class = '',
+        ?string $eventScope = null,
+        array $points = [],
+        array $layers = [],
+        array $options = [],
+        bool $replaceStoredPoints = false,
+        bool $replaceStoredLayers = false,
+        bool $interactive = true,
+        bool $showControls = true,
+        bool $showRefresh = false,
+        bool $fitBounds = false,
+    ): void {
+        $map ??= $record;
         $this->mapId = $map instanceof Map ? $map->getKey() : $map;
         $this->height = $height ?? config('filament-map.default.height', 'h-[500px]');
         $this->width = $width ?? config('filament-map.default.width', 'w-full');
         $this->class = $class;
+        $this->eventScope = $eventScope ?? ($this->mapId !== null ? 'map-'.$this->mapId : 'map-viewer-'.$this->getId());
+        $this->points = $this->normalizePoints($points);
+        $this->layers = array_values($layers);
+        $this->options = $options;
+        $this->replaceStoredPoints = $replaceStoredPoints || $points !== [];
+        $this->replaceStoredLayers = $replaceStoredLayers || $layers !== [];
+        $this->interactive = $interactive;
+        $this->showControls = $showControls;
+        $this->showRefresh = $showRefresh;
+        $this->fitBounds = $fitBounds;
     }
 
-    public function coordinatesPicked(float $lat, float $lng): void
+    #[On('filament-map-points-replace')]
+    public function replacePoints(array $points, ?string $scope = null): void
     {
-        $this->dispatch('filament-map-coordinates-picked', lat: $lat, lng: $lng);
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->points = $this->normalizePoints($points);
+        $this->replaceStoredPoints = true;
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-point-upsert')]
+    public function upsertPoint(array $point, ?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $point = $this->normalizePoint($point);
+
+        if ($point === null) {
+            return;
+        }
+
+        $this->seedPointOverrides();
+        $index = collect($this->points)->search(
+            fn (array $existing): bool => (string) ($existing['id'] ?? '') === (string) $point['id'],
+        );
+
+        if ($index === false) {
+            $this->points[] = $point;
+        } else {
+            $this->points[$index] = $point;
+        }
+
+        $this->points = array_values($this->points);
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-point-remove')]
+    public function removePoint(int|string $pointId, ?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->seedPointOverrides();
+        $this->points = array_values(array_filter(
+            $this->points,
+            fn (array $point): bool => (string) ($point['id'] ?? '') !== (string) $pointId,
+        ));
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-points-clear')]
+    public function clearPoints(?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->points = [];
+        $this->replaceStoredPoints = true;
+        $this->selectedPointId = null;
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-point-select')]
+    public function selectPoint(int|string|null $pointId = null, ?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->selectedPointId = $pointId;
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-layers-replace')]
+    public function replaceLayers(array $layers, ?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->layers = array_values($layers);
+        $this->replaceStoredLayers = true;
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-layers-refresh')]
+    public function refreshLayers(?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->replaceStoredLayers = false;
+        $this->layers = [];
+        $this->dispatchViewerUpdate();
+    }
+
+    #[On('filament-map-refresh')]
+    public function refreshMap(?string $scope = null): void
+    {
+        if (! $this->acceptsScope($scope)) {
+            return;
+        }
+
+        $this->dispatchViewerUpdate();
     }
 
     public function render(MapPayloadBuilder $payloadBuilder): View
     {
-        $map = $this->mapId !== null ? Map::query()->find($this->mapId) : null;
+        $payload = $this->buildPayload($payloadBuilder);
 
         return view('filament-map::livewire.map-viewer', [
-            'payload' => $map ? $payloadBuilder->build($map, $this->overrides()) : null,
+            'payload' => $payload,
+            'mapDomId' => $this->mapDomId(),
         ]);
+    }
+
+    public function mapDomId(): string
+    {
+        return 'filament-map-'.$this->getId();
     }
 
     protected function overrides(): array
     {
-        return array_filter([
-            'points' => $this->points ?: null,
-            'layers' => $this->layers ?: null,
+        $overrides = [
             'map' => $this->options ?: null,
             'controls' => [
                 'layers' => $this->showControls,
@@ -67,7 +214,97 @@ class MapViewer extends Component
                 'interactive' => $this->interactive,
                 'fitBounds' => $this->fitBounds,
                 'selectedPointId' => $this->selectedPointId,
+                'eventScope' => $this->eventScope,
             ],
-        ], fn ($value): bool => $value !== null);
+        ];
+
+        if ($this->replaceStoredPoints) {
+            $overrides['points'] = $this->points;
+        }
+
+        if ($this->replaceStoredLayers) {
+            $overrides['layers'] = $this->layers;
+        }
+
+        return array_filter($overrides, fn ($value): bool => $value !== null);
+    }
+
+    protected function buildPayload(MapPayloadBuilder $payloadBuilder): ?array
+    {
+        $map = $this->mapId !== null ? Map::query()->find($this->mapId) : null;
+
+        return $map ? $payloadBuilder->build($map, $this->overrides()) : null;
+    }
+
+    protected function dispatchViewerUpdate(): void
+    {
+        $payload = $this->buildPayload(app(MapPayloadBuilder::class));
+
+        if ($payload === null) {
+            return;
+        }
+
+        $this->dispatch('filament-map:update', id: $this->mapDomId(), payload: $payload);
+    }
+
+    protected function acceptsScope(?string $scope): bool
+    {
+        return $scope === null || $scope === '' || $scope === $this->eventScope;
+    }
+
+    protected function seedPointOverrides(): void
+    {
+        if ($this->replaceStoredPoints) {
+            return;
+        }
+
+        $payload = $this->buildPayload(app(MapPayloadBuilder::class));
+        $this->points = $this->normalizePoints($payload['points'] ?? []);
+        $this->replaceStoredPoints = true;
+    }
+
+    protected function normalizePoints(array $points): array
+    {
+        return array_values(array_filter(array_map(
+            fn (mixed $point): ?array => is_array($point) ? $this->normalizePoint($point) : null,
+            $points,
+        )));
+    }
+
+    protected function normalizePoint(array $point): ?array
+    {
+        $position = is_array($point['position'] ?? null)
+            ? $point['position']
+            : ['lat' => $point['lat'] ?? null, 'lng' => $point['lng'] ?? null];
+        $lat = $position['lat'] ?? null;
+        $lng = $position['lng'] ?? null;
+
+        if (! is_numeric($lat) || ! is_numeric($lng)) {
+            return null;
+        }
+
+        $id = $point['id'] ?? null;
+
+        if ($id === null || $id === '') {
+            $id = 'external-'.sha1(json_encode([
+                (float) $lat,
+                (float) $lng,
+                $point['name'] ?? null,
+            ]));
+        }
+
+        unset($point['lat'], $point['lng']);
+
+        return [
+            ...$point,
+            'id' => $id,
+            'name' => (string) ($point['name'] ?? ''),
+            'position' => [
+                'lat' => (float) $lat,
+                'lng' => (float) $lng,
+            ],
+            'visible' => (bool) ($point['visible'] ?? true),
+            'options' => is_array($point['options'] ?? null) ? $point['options'] : [],
+        ];
     }
 }

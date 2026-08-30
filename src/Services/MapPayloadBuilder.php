@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentMap\Services;
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 
 class MapPayloadBuilder
@@ -36,7 +37,17 @@ class MapPayloadBuilder
             ],
         ];
 
-        return array_replace_recursive($payload, $overrides);
+        $collectionOverrides = Arr::only($overrides, ['layers', 'points']);
+        $payload = array_replace_recursive($payload, Arr::except($overrides, ['layers', 'points']));
+
+        // Layers and points are ordered collections. They must be replaced as
+        // complete lists: array_replace_recursive() would otherwise retain
+        // stale numeric entries when an override contains fewer items.
+        foreach ($collectionOverrides as $key => $value) {
+            $payload[$key] = array_values($value ?? []);
+        }
+
+        return $payload;
     }
 
     protected function map(Map $map): array

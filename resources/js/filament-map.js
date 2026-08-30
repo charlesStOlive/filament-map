@@ -4,8 +4,32 @@ const manager = new FilamentMapManager()
 
 window.FilamentMap = manager
 
+const bootPendingMaps = () => {
+    if (!window.L) {
+        window.setTimeout(bootPendingMaps, 50)
+        return
+    }
+
+    for (const [id, payload] of Object.entries(window.__filamentMapPending ?? {})) {
+        manager.init(id, payload)
+        delete window.__filamentMapPending[id]
+    }
+}
+
+bootPendingMaps()
+
 window.addEventListener('filament-map:init', (event) => {
+    if (!window.L) {
+        window.__filamentMapPending = window.__filamentMapPending || {}
+        window.__filamentMapPending[event.detail.id] = event.detail.payload
+        return
+    }
+
     manager.init(event.detail.id, event.detail.payload)
+
+    if (window.__filamentMapPending) {
+        delete window.__filamentMapPending[event.detail.id]
+    }
 })
 
 window.addEventListener('filament-map:update', (event) => {

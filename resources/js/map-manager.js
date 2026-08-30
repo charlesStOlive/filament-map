@@ -8,7 +8,7 @@ export class FilamentMapManager {
     init(id, payload) {
         const element = document.getElementById(id)
 
-        if (!element || !window.L) {
+        if (!element || !window.L || !payload?.map) {
             return
         }
 
@@ -23,7 +23,12 @@ export class FilamentMapManager {
     }
 
     update(id, payload) {
-        this.instances.get(id)?.update(payload)
+        if (!this.instances.has(id)) {
+            this.init(id, payload)
+            return
+        }
+
+        this.instances.get(id).update(payload)
     }
 
     destroy(id) {

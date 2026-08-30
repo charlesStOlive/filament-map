@@ -32,6 +32,18 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+## Livewire map viewer
+
+The same component can render a saved map in a Filament schema or in any
+Livewire front-end view:
+
+```blade
+<livewire:filament-map-viewer :map="$map" event-scope="trip-map" :fit-bounds="true" />
+```
+
+See [the Livewire viewer documentation](docs/livewire-map-viewer.md) for the
+Filament integration and the event contract used by external point components.
+
 ## Configuration
 
 See `config/filament-map.php` for available options.
