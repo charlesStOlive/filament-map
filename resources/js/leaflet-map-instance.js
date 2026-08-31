@@ -82,7 +82,7 @@ export class LeafletMapInstance {
             }
 
             if (layer.type === 'geojson') {
-                leafletLayer = addGeoJsonLayer(this.map, layer)
+                leafletLayer = addGeoJsonLayer(this.map, layer, { mapId: this.payload.map.id, scope: this.payload.state?.eventScope })
             }
 
             if (layer.type === 'svg_overlay') {
@@ -226,17 +226,6 @@ export class LeafletMapInstance {
         return sameMap && sameScope
     }
 
-    command(detail = {}) {
-        if (!this.acceptsCommand(detail)) {
-            return false
-        }
-
-        if (['show-layer', 'hide-layer', 'toggle-layer'].includes(detail.command)) {
-            return this.setLayerVisibility(detail.target, detail.command)
-        }
-
-        return false
-    }
 
     setLayerVisibility(layerKey, command) {
         const layer = this.layers.get(String(layerKey))

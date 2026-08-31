@@ -2,8 +2,6 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints;
 
-use CharlesStOlive\FilamentMap\Enums\GeoPointActionTrigger;
-use CharlesStOlive\FilamentMap\Enums\GeoPointActionType;
 use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\CoordinatePicker;
@@ -15,7 +13,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
@@ -23,7 +20,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -62,7 +58,7 @@ class GeoPointResource extends Resource
                     Toggle::make('is_active')->default(true),
                     Textarea::make('description')->columnSpanFull(),
                 ]),
-            Section::make('Coordonnees')
+            Section::make('Coordonnées')
                 ->columns(2)
                 ->schema([
                     TextInput::make('latitude')->numeric()->step('0.0000001')->required(),
@@ -81,58 +77,11 @@ class GeoPointResource extends Resource
                         ->searchable()
                         ->preload(),
                 ]),
-            Section::make('Actions')
-                ->description('Le point peut reagir a une interaction ou a un evenement, puis afficher, masquer, ouvrir un contenu, naviguer ou emettre un evenement.')
-                ->schema([
-                    Repeater::make('actions')
-                        ->relationship()
-                        ->orderColumn('sort_order')
-                        ->columns(2)
-                        ->collapsible()
-                        ->itemLabel(fn (array $state): ?string => $state['name'] ?? $state['key'] ?? null)
-                        ->schema([
-                            TextInput::make('name')
-                                ->label('Nom'),
-                            TextInput::make('key')
-                                ->label('Cle stable')
-                                ->distinct()
-                                ->required(),
-                            Select::make('trigger')
-                                ->label('Declencheur')
-                                ->options(GeoPointActionTrigger::options())
-                                ->live()
-                                ->required(),
-                            TextInput::make('trigger_event')
-                                ->label('Evenement ecoute')
-                                ->required(fn (Get $get): bool => $get('trigger') === GeoPointActionTrigger::Event->value)
-                                ->helperText('Requis uniquement pour le declencheur « evenement ».'),
-                            Select::make('type')
-                                ->label('Effet')
-                                ->options(GeoPointActionType::options())
-                                ->live()
-                                ->required(),
-                            TextInput::make('target')
-                                ->label('Cible')
-                                ->required(fn (Get $get): bool => in_array($get('type'), [
-                                    GeoPointActionType::Dispatch->value,
-                                    GeoPointActionType::Navigate->value,
-                                ], true))
-                                ->helperText('Nom d’evenement pour dispatch, URL pour navigation, ou identifiant de contenu.'),
-                            KeyValue::make('payload')
-                                ->label('Donnees')
-                                ->columnSpanFull(),
-                            KeyValue::make('options')
-                                ->label('Options')
-                                ->columnSpanFull(),
-                            Toggle::make('is_active')
-                                ->label('Active')
-                                ->default(true),
-                        ]),
-                ]),
-            Section::make('Overrides')
+            Section::make('Apparence')
+                ->description('Les comportements sont désormais définis centralement dans une orchestration.')
                 ->schema([
                     SpatieMediaLibraryFileUpload::make('marker_image')
-                        ->label('Image propre a ce point')
+                        ->label('Image propre à ce point')
                         ->collection(config('filament-map.media_collections.marker_image', 'marker_image'))
                         ->image()
                         ->columnSpanFull(),
@@ -153,14 +102,8 @@ class GeoPointResource extends Resource
                 TextColumn::make('maps_count')->counts('maps')->label('Cartes'),
                 IconColumn::make('is_active')->boolean(),
             ])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([EditAction::make()])
+            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
     }
 
     public static function getPages(): array

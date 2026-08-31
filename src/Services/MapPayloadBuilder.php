@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentMap\Services;
 
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
-use CharlesStOlive\FilamentMap\Models\GeoPointAction;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Illuminate\Support\Arr;
@@ -17,7 +16,6 @@ class MapPayloadBuilder
             'layers',
             'points.type',
             'points.media',
-            'points.actions',
             'points.type.media',
         ]);
 
@@ -43,9 +41,6 @@ class MapPayloadBuilder
         $collectionOverrides = Arr::only($overrides, ['layers', 'points']);
         $payload = array_replace_recursive($payload, Arr::except($overrides, ['layers', 'points']));
 
-        // Layers and points are ordered collections. They must be replaced as
-        // complete lists: array_replace_recursive() would otherwise retain
-        // stale numeric entries when an override contains fewer items.
         foreach ($collectionOverrides as $key => $value) {
             $payload[$key] = array_values($value ?? []);
         }
@@ -57,6 +52,7 @@ class MapPayloadBuilder
     {
         return [
             'id' => $map->getKey(),
+            'key' => $map->slug,
             'name' => $map->name,
             'mode' => $map->mode,
             'center' => [
@@ -94,10 +90,7 @@ class MapPayloadBuilder
         $media = $layer->getFirstMedia(config('filament-map.media_collections.layer_source', 'layer_source'));
 
         if ($media !== null) {
-            return [
-                'type' => 'url',
-                'url' => $media->getUrl(),
-            ];
+            return ['type' => 'url', 'url' => $media->getUrl()];
         }
 
         return match ($layer->source_type) {
@@ -158,6 +151,7 @@ class MapPayloadBuilder
 
         return [
             'id' => $point->getKey(),
+            'key' => $point->slug,
             'type' => $type?->key,
             'name' => $pivot?->label ?: $point->name,
             'description' => $point->description,
@@ -174,36 +168,12 @@ class MapPayloadBuilder
             'image' => $image,
             'style' => $markerStyle,
             'appearance' => $this->pointAppearance($markerStyle, $icon, $image, $color),
-            'actions' => $point->actions
-                ->where('is_active', true)
-                ->values()
-                ->map(fn (GeoPointAction $action): array => $this->action($action))
-                ->all(),
             'cluster' => [
                 'enabled' => (bool) ($options['clusterable'] ?? true),
                 'group' => $options['cluster_group'] ?? 'default',
             ],
             'options' => $options,
             'sortOrder' => $pivot?->sort_order ?? 0,
-        ];
-    }
-
-    protected function action(GeoPointAction $action): array
-    {
-        return [
-            'id' => $action->getKey(),
-            'key' => $action->key,
-            'name' => $action->name,
-            'trigger' => [
-                'type' => $action->trigger->value,
-                'event' => $action->trigger_event,
-            ],
-            'effect' => [
-                'type' => $action->type->value,
-                'target' => $action->target,
-                'payload' => $action->payload ?? [],
-            ],
-            'options' => $action->options ?? [],
         ];
     }
 
@@ -221,10 +191,7 @@ class MapPayloadBuilder
         return [
             'shape' => $style['shape'] ?? config('filament-map.markers.shape', 'pin'),
             'svg' => $style['svg'] ?? null,
-            'content' => [
-                'type' => $contentType,
-                'value' => $contentValue,
-            ],
+            'content' => ['type' => $contentType, 'value' => $contentValue],
             'color' => $color,
             'size' => is_array($style['size'] ?? null) ? $style['size'] : [],
             'css' => is_array($style['css'] ?? null) ? $style['css'] : [],

@@ -1,4 +1,4 @@
-export function addGeoJsonLayer(map, layer) {
+export function addGeoJsonLayer(map, layer, context = {}) {
     const applyStyleRules = (feature) => {
         const baseStyle = layer.style ?? {}
 
@@ -20,7 +20,12 @@ export function addGeoJsonLayer(map, layer) {
             onEachFeature(feature, leafletLayer) {
                 leafletLayer.on('click', () => {
                     window.dispatchEvent(new CustomEvent('filament-map:feature-clicked', {
-                        detail: { layer, feature },
+                        detail: {
+                            mapId: context.mapId,
+                            scope: context.scope,
+                            layer,
+                            feature,
+                        },
                     }))
                 })
             },
@@ -39,7 +44,21 @@ export function addGeoJsonLayer(map, layer) {
     }
 
     if (layer.source?.type === 'url' && layer.source.url) {
-        const placeholderLayer = L.geoJSON(null)
+        const placeholderLayer = L.geoJSON(null, {
+            style: applyStyleRules,
+            onEachFeature(feature, leafletLayer) {
+                leafletLayer.on('click', () => {
+                    window.dispatchEvent(new CustomEvent('filament-map:feature-clicked', {
+                        detail: {
+                            mapId: context.mapId,
+                            scope: context.scope,
+                            layer,
+                            feature,
+                        },
+                    }))
+                })
+            },
+        })
 
         if (layer.visible) {
             placeholderLayer.addTo(map)
@@ -60,7 +79,6 @@ export function addGeoJsonLayer(map, layer) {
 
                 placeholderLayer.addData(data)
                 placeholderLayer.setStyle(applyStyleRules)
-
                 placeholderLayer.fire('filament-map:ready')
             })
             .catch((error) => placeholderLayer.fire('filament-map:error', { error }))

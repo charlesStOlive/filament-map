@@ -1,61 +1,48 @@
 # filament-map
 
-A Filament plugin to integrate interactive maps into your Filament admin panel.
+Plugin Filament de stockage et de rendu de cartes, couches et points.
+
+## Responsabilité
+
+`filament-map` reste un moteur cartographique bas niveau :
+
+- il stocke `Map`, `MapLayer`, `GeoPoint` et `GeoPointType` ;
+- il construit un payload de rendu ;
+- il publie les clics sur les points et les éléments GeoJSON ;
+- il exécute des commandes de carte via un registre JavaScript extensible.
+
+Il ne stocke plus d’actions sur `GeoPoint`. Les scénarios, déclencheurs et
+séquences d’actions appartiennent à `filament-orchestrator`.
 
 ## Installation
 
-You can install the package via composer:
-
 ```bash
 composer require charlesstolive/filament-map
-```
-
-Publish the config file and run the install command:
-
-```bash
 php artisan filament-map:install
 php artisan migrate
 ```
 
-## Usage
-
-Register the plugin in your Filament panel provider:
-
-```php
-use CharlesStOlive\FilamentMap\FilamentMapPlugin;
-
-public function panel(Panel $panel): Panel
-{
-    return $panel
-        ->plugins([
-            FilamentMapPlugin::make(),
-        ]);
-}
-```
-
-## Livewire map viewer
-
-The same component can render a saved map in a Filament schema or in any
-Livewire front-end view:
+## Viewer Livewire
 
 ```blade
 <livewire:filament-map-viewer :map="$map" event-scope="trip-map" :fit-bounds="true" />
 ```
 
-See [the Livewire viewer documentation](docs/livewire-map-viewer.md) for the
-Filament integration and the event contract used by external point components.
+Le viewer publie notamment :
 
-See [the geopoint action contract](docs/geopoint-actions.md) for declarative
-events, marker appearance and the clustering strategy.
+- `filament-map:point-clicked` ;
+- `filament-map:feature-clicked` ;
+- `filament-map:coordinates-picked`.
 
-## Configuration
+Les commandes intégrées sont :
 
-See `config/filament-map.php` for available options.
+- `show-layer`, `hide-layer`, `toggle-layer` ;
+- `zoom-to`, `move-to`, `fit-bounds` ;
+- `highlight-feature`.
 
-## Changelog
+Une application peut enregistrer une commande avec
+`window.FilamentMap.registerCommand(name, handler)`. Si son bundle est chargé
+avant celui du plugin, elle peut attendre l’événement `filament-map:ready`.
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+Voir [la documentation du viewer](docs/livewire-map-viewer.md) et [le contrat
+des points](docs/geopoints.md).

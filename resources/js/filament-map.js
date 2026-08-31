@@ -32,13 +32,8 @@ window.addEventListener('filament-map:init', (event) => {
     }
 })
 
-window.addEventListener('filament-map:update', (event) => {
-    manager.update(event.detail.id, event.detail.payload)
-})
-
-window.addEventListener('filament-map:destroy', (event) => {
-    manager.destroy(event.detail.id)
-})
+window.addEventListener('filament-map:update', (event) => manager.update(event.detail.id, event.detail.payload))
+window.addEventListener('filament-map:destroy', (event) => manager.destroy(event.detail.id))
 
 window.addEventListener('filament-map:command', (event) => {
     const result = manager.command(event.detail ?? {})
@@ -50,6 +45,9 @@ window.addEventListener('filament-map:command', (event) => {
         detail: {
             ...event.detail,
             instanceId: result.id,
+            message: result.message,
         },
     }))
 })
+
+window.dispatchEvent(new CustomEvent('filament-map:ready', { detail: { manager } }))

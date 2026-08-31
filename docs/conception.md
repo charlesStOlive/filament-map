@@ -42,6 +42,7 @@ Une carte contient :
 
 Le mode principal ne doit pas enfermer l'architecture. Une carte peut etre principalement `geojson`, mais contenir aussi une couche de tuiles OpenStreetMap, une couche de points et plus tard une couche SVG.
 
+
 ### Couche de carte
 
 Une couche est un element affichable dans une carte.
@@ -252,29 +253,6 @@ La strategie recommandee est double :
 - ajouter une colonne spatiale `coordinates` de type point avec SRID 4326 lorsque le moteur de base le supporte correctement.
 
 Cela donne une base pratique pour Filament tout en permettant des recherches spatiales plus propres ensuite.
-
-### `filament_map_geo_point_actions`
-
-Une action relie un declencheur declaratif a un effet sans executer de classe
-PHP stockee en base.
-
-Champs principaux :
-
-- `id`
-- `geo_point_id`
-- `name`
-- `key`
-- `trigger`
-- `trigger_event`
-- `type`
-- `target`
-- `payload`
-- `options`
-- `sort_order`
-- `is_active`
-- timestamps
-
-Le contrat complet est decrit dans [geopoint-actions.md](geopoint-actions.md).
 
 ### `filament_map_geo_map_point`
 

@@ -43,20 +43,14 @@
 @if ($payload)
     @script
         <script>
-            const id = @js($mapDomId)
-            const payload = @js($payload)
+            const id = @js($mapDomId);
+            const payload = @js($payload);
 
-            window.__filamentMapPending = window.__filamentMapPending || {}
-            window.__filamentMapPending[id] = payload
+            window.__filamentMapPending = window.__filamentMapPending || {};
+            window.__filamentMapPending[id] = payload;
             window.dispatchEvent(new CustomEvent('filament-map:init', {
                 detail: { id, payload },
-            }))
-
-            cleanup(() => {
-                window.dispatchEvent(new CustomEvent('filament-map:destroy', {
-                    detail: { id },
-                }))
-            })
+            }));
         </script>
     @endscript
 @endif

@@ -127,18 +127,6 @@ La sélection recentre la carte sur le marqueur et ouvre sa popup ou son tooltip
         'size' => [],
         'css' => [],
     ],
-    'actions' => [
-        [
-            'key' => 'select-place',
-            'trigger' => ['type' => 'click', 'event' => null],
-            'effect' => [
-                'type' => 'dispatch',
-                'target' => 'trip.place.selected',
-                'payload' => [],
-            ],
-            'options' => [],
-        ],
-    ],
     'cluster' => ['enabled' => true, 'group' => 'default'],
     'options' => [
         'marker' => [],
@@ -151,8 +139,9 @@ La sélection recentre la carte sur le marqueur et ouvre sa popup ou son tooltip
 Seules les coordonnées sont obligatoires. Un identifiant stable est fortement
 recommandé pour permettre les mises à jour, suppressions et sélections.
 
-Le contrat des actions, de l'apparence et du regroupement est détaille dans
-[geopoint-actions.md](geopoint-actions.md).
+Le contrat de l'apparence et du regroupement est détaillé dans
+[geopoints.md](geopoints.md). Les comportements déclenchés par ces événements
+appartiennent à `filament-orchestrator` ou à l'application.
 
 ## Événements émis par la carte
 
