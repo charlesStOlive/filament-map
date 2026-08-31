@@ -2,6 +2,17 @@
 
 Plugin Filament de stockage et de rendu de cartes, couches et points.
 
+## Documentation intégrée à Filament
+
+Le package dépend de `guava/filament-knowledge-base` et embarque une documentation opérateur dans `docs/knowledge-base`.
+L'application hôte peut l'ajouter à sa base de connaissances avec :
+
+```bash
+php artisan vendor:publish --tag=filament-map-docs --force
+```
+
+Les ressources Cartes, Couches cartographiques, Points géographiques et Types de points implémentent `HasKnowledgeBase`. Le plugin compagnon Guava affiche donc automatiquement les articles correspondants dans leur menu d'aide.
+
 ## Responsabilité
 
 `filament-map` reste un moteur cartographique bas niveau :

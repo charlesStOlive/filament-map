@@ -27,7 +27,11 @@ class FilamentMapServiceProvider extends PackageServiceProvider
         Livewire::component('filament-map-viewer', MapViewer::class);
 
         $this->publishes([
-            __DIR__.'/../resources/js' => public_path('vendor/filament-map'),
+            __DIR__ . '/../resources/js' => public_path('vendor/filament-map'),
         ], 'filament-map-assets');
+
+        $this->publishes([
+            __DIR__ . '/../docs/knowledge-base' => base_path('docs/knowledge-base/fr'),
+        ], 'filament-map-docs');
     }
 }

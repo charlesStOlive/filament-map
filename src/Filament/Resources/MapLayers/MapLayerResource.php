@@ -24,9 +24,10 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Support\Str;
 
-class MapLayerResource extends Resource
+class MapLayerResource extends Resource implements HasKnowledgeBase
 {
     use BelongsToConfiguredMapCluster;
     use HasMapResourceAuthorization;
@@ -38,6 +39,11 @@ class MapLayerResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static ?string $navigationLabel = 'Couches cartographiques';
+
+    public static function getDocumentation(): array|string
+    {
+        return ['map.couches', 'map.apparence'];
+    }
 
     public static function form(Schema $schema): Schema
     {

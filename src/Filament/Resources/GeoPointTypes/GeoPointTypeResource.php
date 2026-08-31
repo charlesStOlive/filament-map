@@ -25,9 +25,10 @@ use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
 use Illuminate\Support\Str;
 
-class GeoPointTypeResource extends Resource
+class GeoPointTypeResource extends Resource implements HasKnowledgeBase
 {
     use BelongsToConfiguredMapCluster;
     use HasMapResourceAuthorization;
@@ -39,6 +40,11 @@ class GeoPointTypeResource extends Resource
     protected static ?string $recordTitleAttribute = 'name';
 
     protected static ?string $navigationLabel = 'Types de points';
+
+    public static function getDocumentation(): array|string
+    {
+        return ['map.types-de-points', 'map.apparence'];
+    }
 
     public static function form(Schema $schema): Schema
     {
