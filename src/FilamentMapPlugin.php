@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap;
 
+use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\GeoPointResource;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\GeoPointTypeResource;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\MapLayerResource;
@@ -29,6 +30,14 @@ class FilamentMapPlugin implements Plugin
         return 'filament-map';
     }
 
+    public function cluster(?string $cluster): static
+    {
+        config()->set('filament-map.cluster.enabled', $cluster !== null);
+        config()->set('filament-map.cluster.class', $cluster);
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
         $resources = [];
@@ -49,12 +58,15 @@ class FilamentMapPlugin implements Plugin
             $resources[] = GeoPointTypeResource::class;
         }
 
-        $panel
-            ->resources($resources)
-            ->discoverClusters(
-                in: __DIR__ . '/Filament/Clusters',
+        $panel->resources($resources);
+
+        if (config('filament-map.cluster.enabled', true)
+            && config('filament-map.cluster.class', MapCluster::class) === MapCluster::class) {
+            $panel->discoverClusters(
+                in: __DIR__.'/Filament/Clusters',
                 for: 'CharlesStOlive\\FilamentMap\\Filament\\Clusters',
             );
+        }
     }
 
     public function boot(Panel $panel): void

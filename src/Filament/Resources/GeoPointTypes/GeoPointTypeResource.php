@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes;
 
-use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
+use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\CreateGeoPointType;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\EditGeoPointType;
@@ -29,15 +29,16 @@ use Illuminate\Support\Str;
 
 class GeoPointTypeResource extends Resource
 {
+    use BelongsToConfiguredMapCluster;
     use HasMapResourceAuthorization;
 
     public static array $specificPermissions = ['attach-media'];
 
     protected static ?string $model = GeoPointType::class;
 
-    protected static ?string $cluster = MapCluster::class;
-
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?string $navigationLabel = 'Types de points';
 
     public static function form(Schema $schema): Schema
     {

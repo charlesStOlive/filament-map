@@ -14,6 +14,16 @@ Plugin Filament de stockage et de rendu de cartes, couches et points.
 Il ne stocke plus d’actions sur `GeoPoint`. Les scénarios, déclencheurs et
 séquences d’actions appartiennent à `filament-orchestrator`.
 
+## Cluster Filament
+
+Par défaut, les ressources sont rangées dans le cluster `Cartographie`. Une
+application peut fournir son propre cluster ou désactiver le regroupement :
+
+```php
+FilamentMapPlugin::make()->cluster(Voyage::class);
+FilamentMapPlugin::make()->cluster(null);
+```
+
 ## Installation
 
 ```bash

@@ -1,6 +1,18 @@
 <?php
 
+use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
+
 return [
+
+    'cluster' => [
+        'enabled' => true,
+        'class' => MapCluster::class,
+        'label' => 'Cartographie',
+        'slug' => 'cartographie',
+        'icon' => 'heroicon-o-map',
+        'navigation_group' => null,
+        'navigation_sort' => null,
+    ],
 
     /*
     |--------------------------------------------------------------------------

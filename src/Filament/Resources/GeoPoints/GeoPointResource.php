@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints;
 
-use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
+use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\CoordinatePicker;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\Pages\CreateGeoPoint;
@@ -28,15 +28,16 @@ use Illuminate\Support\Str;
 
 class GeoPointResource extends Resource
 {
+    use BelongsToConfiguredMapCluster;
     use HasMapResourceAuthorization;
 
     public static array $specificPermissions = ['pick-coordinates', 'attach-media'];
 
     protected static ?string $model = GeoPoint::class;
 
-    protected static ?string $cluster = MapCluster::class;
-
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?string $navigationLabel = 'Points géographiques';
 
     public static function form(Schema $schema): Schema
     {

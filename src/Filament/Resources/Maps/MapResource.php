@@ -2,7 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Resources\Maps;
 
-use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
+use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapViewportPicker;
 use CharlesStOlive\FilamentMap\Filament\Resources\Maps\Pages\CreateMap;
@@ -33,15 +33,16 @@ use Illuminate\Support\Str;
 
 class MapResource extends Resource
 {
+    use BelongsToConfiguredMapCluster;
     use HasMapResourceAuthorization;
 
     public static array $specificPermissions = ['preview', 'attach-point', 'detach-point'];
 
     protected static ?string $model = Map::class;
 
-    protected static ?string $cluster = MapCluster::class;
-
     protected static ?string $recordTitleAttribute = 'name';
+
+    protected static ?string $navigationLabel = 'Cartes';
 
     public static function form(Schema $schema): Schema
     {
