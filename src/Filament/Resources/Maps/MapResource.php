@@ -54,7 +54,7 @@ class MapResource extends Resource
                         ->label('Nom')
                         ->required()
                         ->live(onBlur: true)
-                        ->afterStateUpdated(fn (?string $state, callable $set) => $set('slug', Str::slug($state ?? ''))),
+                        ->afterStateUpdated(fn(?string $state, callable $set) => $set('slug', Str::slug($state ?? ''))),
                     TextInput::make('slug')
                         ->required()
                         ->unique(ignoreRecord: true),
@@ -114,25 +114,25 @@ class MapResource extends Resource
                             Textarea::make('style')
                                 ->label('Override style JSON')
                                 ->rows(5)
-                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
-                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                                ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
                             Textarea::make('style_rules')
                                 ->label('Override règles JSON')
                                 ->rows(5)
-                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
-                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                                ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
                             Textarea::make('options')
                                 ->label('Override options JSON')
                                 ->rows(5)
-                                ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
-                                ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
+                                ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                                ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null)),
                         ])
                         ->columns(2)
                         ->defaultItems(0)
                         ->addActionLabel('Ajouter une couche')
                         ->reorderable()
                         ->collapsible()
-                        ->itemLabel(fn (array $state): ?string => filled($state['map_layer_id'] ?? null)
+                        ->itemLabel(fn(array $state): ?string => filled($state['map_layer_id'] ?? null)
                             ? MapLayer::query()->find($state['map_layer_id'])?->name
                             : null),
                 ]),
@@ -141,16 +141,16 @@ class MapResource extends Resource
                 ->schema([
                     LivewireComponent::make(
                         MapViewer::class,
-                        fn (?Map $record): array => [
+                        fn(?Map $record): array => [
                             'map' => $record,
-                            'eventScope' => $record ? 'map-'.$record->getKey() : null,
+                            'eventScope' => $record ? 'map-' . $record->getKey() : null,
                             'height' => 'h-[520px]',
                             'showRefresh' => true,
                         ],
                     )
-                        ->key(fn (?Map $record): string => 'filament-map-preview-'.($record?->getKey() ?? 'new')),
+                        ->key(fn(?Map $record): string => 'filament-map-preview-' . ($record?->getKey() ?? 'new')),
                 ])
-                ->visible(fn (?Map $record): bool => (bool) $record?->exists),
+                ->visible(fn(?Map $record): bool => (bool) $record?->exists),
             Section::make('Options')
                 ->collapsed()
                 ->schema([
@@ -158,8 +158,8 @@ class MapResource extends Resource
                         ->label('Bounds JSON')
                         ->language(Language::Json)
                         ->wrap()
-                        ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
-                        ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                        ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                        ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
                         ->helperText('Zone visible de la carte, remplie par la vue interactive. Le centre et le zoom restent les valeurs de démarrage.'),
                     KeyValue::make('options'),
                 ]),

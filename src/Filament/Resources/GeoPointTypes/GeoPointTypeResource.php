@@ -50,7 +50,7 @@ class GeoPointTypeResource extends Resource
                         ->label('Nom')
                         ->required()
                         ->live(onBlur: true)
-                        ->afterStateUpdated(fn (?string $state, callable $set) => $set('key', Str::slug($state ?? ''))),
+                        ->afterStateUpdated(fn(?string $state, callable $set) => $set('key', Str::slug($state ?? ''))),
                     TextInput::make('key')->required()->unique(ignoreRecord: true),
                     TextInput::make('icon')->helperText('Ex: heroicon-o-map-pin, lucide-camera ou cle custom.'),
                     ColorPicker::make('color'),

@@ -49,7 +49,7 @@ class GeoPointResource extends Resource
                         ->label('Nom')
                         ->required()
                         ->live(onBlur: true)
-                        ->afterStateUpdated(fn (?string $state, callable $set) => $set('slug', Str::slug($state ?? ''))),
+                        ->afterStateUpdated(fn(?string $state, callable $set) => $set('slug', Str::slug($state ?? ''))),
                     TextInput::make('slug')->required()->unique(ignoreRecord: true),
                     Select::make('geo_point_type_id')
                         ->label('Type')

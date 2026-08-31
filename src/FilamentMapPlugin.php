@@ -60,10 +60,12 @@ class FilamentMapPlugin implements Plugin
 
         $panel->resources($resources);
 
-        if (config('filament-map.cluster.enabled', true)
-            && config('filament-map.cluster.class', MapCluster::class) === MapCluster::class) {
+        if (
+            config('filament-map.cluster.enabled', true)
+            && config('filament-map.cluster.class', MapCluster::class) === MapCluster::class
+        ) {
             $panel->discoverClusters(
-                in: __DIR__.'/Filament/Clusters',
+                in: __DIR__ . '/Filament/Clusters',
                 for: 'CharlesStOlive\\FilamentMap\\Filament\\Clusters',
             );
         }
