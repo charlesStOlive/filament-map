@@ -3,7 +3,15 @@
     $statePath = $getStatePath();
     $parentStatePath = str($statePath)->beforeLast('.')->toString();
     $fieldPath = fn (string $field): string => filled($parentStatePath) ? "{$parentStatePath}.{$field}" : $field;
+    $mapPayload = $getMapPayload();
 @endphp
+
+@assets
+    <link rel="stylesheet" href="{{ config('filament-map.leaflet.css_url') }}">
+    <script src="{{ config('filament-map.leaflet.js_url') }}"></script>
+    <script type="module" src="{{ asset(config('filament-map.leaflet.assets_path', 'vendor/filament-map/filament-map.js')) }}"></script>
+    <script src="{{ asset('vendor/filament-map/map-viewport-picker.js') }}"></script>
+@endassets
 
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     <div
@@ -15,6 +23,9 @@
             zoomPath: @js($fieldPath($getZoomField())),
             boundsPath: @js($fieldPath($getBoundsField())),
             syncBounds: @js($shouldSyncBounds()),
+            type: @js($getType()),
+            scope: @js('viewport-picker-' . $mapDomId),
+            mapPayload: @js($mapPayload),
             defaults: {
                 lat: @js(config('filament-map.default.lat', 48.8566)),
                 lng: @js(config('filament-map.default.lng', 2.3522)),
@@ -28,22 +39,18 @@
         x-init="init()"
         class="space-y-3"
     >
-        @once
-            <link rel="stylesheet" href="{{ config('filament-map.leaflet.css_url') }}">
-            <script src="{{ config('filament-map.leaflet.js_url') }}"></script>
-            <script src="{{ asset('vendor/filament-map/map-viewport-picker.js') }}"></script>
-        @endonce
-
         <div id="{{ $mapDomId }}" class="{{ $getHeight() }} min-h-[320px] w-full overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"></div>
 
         <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <x-filament::button type="button" color="gray" size="xs" x-on:click="syncFromMap()">
-                Utiliser la vue actuelle
-            </x-filament::button>
+            @if ($getType() === \CharlesStOlive\FilamentMap\Filament\Forms\Components\MapViewportPicker::TYPE_VIEWPORT)
+                <x-filament::button type="button" color="gray" size="xs" x-on:click="syncFromMap()">
+                    Utiliser la vue actuelle
+                </x-filament::button>
 
-            <x-filament::button type="button" color="gray" size="xs" x-on:click="fitConfiguredBounds()">
-                Revenir aux bounds
-            </x-filament::button>
+                <x-filament::button type="button" color="gray" size="xs" x-on:click="fitConfiguredBounds()">
+                    Revenir aux bounds
+                </x-filament::button>
+            @endif
 
             <span x-text="summary"></span>
         </div>
