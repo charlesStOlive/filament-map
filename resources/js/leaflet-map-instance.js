@@ -216,6 +216,50 @@ export class LeafletMapInstance {
         }
     }
 
+    acceptsCommand(detail = {}) {
+        const sameMap = detail.mapId === null
+            || detail.mapId === undefined
+            || String(detail.mapId) === String(this.payload.map.id)
+        const scope = this.payload.state?.eventScope
+        const sameScope = !detail.scope || !scope || detail.scope === scope
+
+        return sameMap && sameScope
+    }
+
+    command(detail = {}) {
+        if (!this.acceptsCommand(detail)) {
+            return false
+        }
+
+        if (['show-layer', 'hide-layer', 'toggle-layer'].includes(detail.command)) {
+            return this.setLayerVisibility(detail.target, detail.command)
+        }
+
+        return false
+    }
+
+    setLayerVisibility(layerKey, command) {
+        const layer = this.layers.get(String(layerKey))
+
+        if (!layer) {
+            return false
+        }
+
+        const visible = this.map.hasLayer(layer)
+        const shouldShow = command === 'show-layer'
+            || (command === 'toggle-layer' && !visible)
+
+        if (shouldShow && !visible) {
+            layer.addTo(this.map)
+        }
+
+        if (!shouldShow && visible) {
+            layer.removeFrom(this.map)
+        }
+
+        return true
+    }
+
     coordinatesPicked(position) {
         const detail = this.eventDetail({
             lat: position.lat,

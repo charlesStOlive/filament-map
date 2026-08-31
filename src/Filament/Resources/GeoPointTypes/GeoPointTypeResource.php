@@ -13,11 +13,13 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
-use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
@@ -30,6 +32,7 @@ class GeoPointTypeResource extends Resource
     use HasMapResourceAuthorization;
 
     public static array $specificPermissions = ['attach-media'];
+
     protected static ?string $model = GeoPointType::class;
 
     protected static ?string $cluster = MapCluster::class;
@@ -55,8 +58,55 @@ class GeoPointTypeResource extends Resource
                     Textarea::make('description')->columnSpanFull(),
                 ]),
             Section::make('Rendu par defaut')
+                ->description('Le type pilote la forme et le contenu visuel des points. Un SVG personnalise sera rendu comme une forme, pas comme du contenu metier.')
+                ->columns(2)
+                ->statePath('marker_style')
                 ->schema([
-                    KeyValue::make('marker_style'),
+                    Select::make('shape')
+                        ->label('Forme')
+                        ->options([
+                            'pin' => 'Goutte / epingle',
+                            'circle' => 'Cercle',
+                            'star' => 'Etoile',
+                            'svg' => 'SVG personnalise',
+                        ])
+                        ->default('pin')
+                        ->required(),
+                    Select::make('content.type')
+                        ->label('Contenu du point')
+                        ->options([
+                            'none' => 'Aucun',
+                            'icon' => 'Icone',
+                            'image' => 'Image',
+                            'text' => 'Texte',
+                        ])
+                        ->default('icon')
+                        ->required(),
+                    Textarea::make('svg')
+                        ->label('SVG personnalise')
+                        ->helperText('Le SVG devra etre nettoye avant son rendu dans le navigateur.')
+                        ->rows(6)
+                        ->columnSpanFull(),
+                    TextInput::make('content.value')
+                        ->label('Icone ou texte')
+                        ->helperText('Pour une image, la collection Media Library du type sera utilisee.'),
+                    TextInput::make('size.width')
+                        ->label('Largeur')
+                        ->numeric(),
+                    TextInput::make('size.height')
+                        ->label('Hauteur')
+                        ->numeric(),
+                    KeyValue::make('css')
+                        ->label('Variables de style')
+                        ->columnSpanFull(),
+                ]),
+            Section::make('Options avancees')
+                ->schema([
+                    SpatieMediaLibraryFileUpload::make('default_marker_image')
+                        ->label('Image du point')
+                        ->collection(config('filament-map.media_collections.default_marker_image', 'default_marker_image'))
+                        ->image()
+                        ->columnSpanFull(),
                     KeyValue::make('options'),
                 ]),
         ]);

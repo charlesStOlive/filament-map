@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentMap\Services;
 
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
+use CharlesStOlive\FilamentMap\Models\GeoPointAction;
 use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use Illuminate\Support\Arr;
@@ -16,6 +17,7 @@ class MapPayloadBuilder
             'layers',
             'points.type',
             'points.media',
+            'points.actions',
             'points.type.media',
         ]);
 
@@ -31,6 +33,7 @@ class MapPayloadBuilder
                 ->values()
                 ->map(fn (GeoPoint $point): array => $this->point($point))
                 ->all(),
+            'clustering' => $this->clustering($map),
             'controls' => [
                 'zoom' => true,
                 'layers' => true,
@@ -148,6 +151,10 @@ class MapPayloadBuilder
             $point->marker_style ?? [],
             $this->pivotJson($pivot?->marker_style),
         );
+        $options = array_replace_recursive($point->options ?? [], $this->pivotJson($pivot?->options));
+        $image = $this->markerImage($point);
+        $icon = $options['icon'] ?? $type?->icon;
+        $color = $options['color'] ?? $type?->color;
 
         return [
             'id' => $point->getKey(),
@@ -162,13 +169,76 @@ class MapPayloadBuilder
             'layerId' => $pivot?->layer_id,
             'tooltip' => $pivot?->tooltip,
             'popup' => $pivot?->popup_content,
-            'icon' => $point->options['icon'] ?? $type?->icon,
-            'color' => $point->options['color'] ?? $type?->color,
-            'image' => $this->markerImage($point),
+            'icon' => $icon,
+            'color' => $color,
+            'image' => $image,
             'style' => $markerStyle,
-            'options' => array_replace_recursive($point->options ?? [], $this->pivotJson($pivot?->options)),
+            'appearance' => $this->pointAppearance($markerStyle, $icon, $image, $color),
+            'actions' => $point->actions
+                ->where('is_active', true)
+                ->values()
+                ->map(fn (GeoPointAction $action): array => $this->action($action))
+                ->all(),
+            'cluster' => [
+                'enabled' => (bool) ($options['clusterable'] ?? true),
+                'group' => $options['cluster_group'] ?? 'default',
+            ],
+            'options' => $options,
             'sortOrder' => $pivot?->sort_order ?? 0,
         ];
+    }
+
+    protected function action(GeoPointAction $action): array
+    {
+        return [
+            'id' => $action->getKey(),
+            'key' => $action->key,
+            'name' => $action->name,
+            'trigger' => [
+                'type' => $action->trigger->value,
+                'event' => $action->trigger_event,
+            ],
+            'effect' => [
+                'type' => $action->type->value,
+                'target' => $action->target,
+                'payload' => $action->payload ?? [],
+            ],
+            'options' => $action->options ?? [],
+        ];
+    }
+
+    protected function pointAppearance(array $style, ?string $icon, ?string $image, ?string $color): array
+    {
+        $content = is_array($style['content'] ?? null) ? $style['content'] : [];
+        $contentType = $content['type'] ?? config('filament-map.markers.content_type', 'icon');
+        $contentValue = match ($contentType) {
+            'image' => $image,
+            'icon' => $content['value'] ?? $icon,
+            'text' => $content['value'] ?? null,
+            default => null,
+        };
+
+        return [
+            'shape' => $style['shape'] ?? config('filament-map.markers.shape', 'pin'),
+            'svg' => $style['svg'] ?? null,
+            'content' => [
+                'type' => $contentType,
+                'value' => $contentValue,
+            ],
+            'color' => $color,
+            'size' => is_array($style['size'] ?? null) ? $style['size'] : [],
+            'css' => is_array($style['css'] ?? null) ? $style['css'] : [],
+        ];
+    }
+
+    protected function clustering(Map $map): array
+    {
+        $mapClustering = Arr::get($map->options ?? [], 'clustering', []);
+
+        return array_replace_recursive(
+            config('filament-map.clustering', []),
+            is_array($mapClustering) ? $mapClustering : [],
+        );
     }
 
     protected function pivotJson(mixed $value): array

@@ -35,6 +35,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Point rendering and clustering
+    |--------------------------------------------------------------------------
+    */
+    'markers' => [
+        'shape' => 'pin',
+        'content_type' => 'icon',
+    ],
+
+    'clustering' => [
+        'enabled' => false,
+        'max_zoom' => 14,
+        'radius' => 80,
+        'group_by_type' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database tables
+    |--------------------------------------------------------------------------
+    */
+    'tables' => [
+        'maps' => 'filament_map_maps',
+        'geo_point_types' => 'filament_map_geo_point_types',
+        'geo_points' => 'filament_map_geo_points',
+        'geo_point_actions' => 'filament_map_geo_point_actions',
+        'layers' => 'filament_map_layers',
+        'map_layers' => 'filament_map_map_layer',
+        'map_geo_point' => 'filament_map_geo_map_point',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media collections
+    |--------------------------------------------------------------------------
+    */
+    'media_collections' => [
+        'map_preview' => 'map_preview',
+        'layer_source' => 'layer_source',
+        'default_marker_image' => 'default_marker_image',
+        'marker_image' => 'marker_image',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Leaflet assets
     |--------------------------------------------------------------------------
     */

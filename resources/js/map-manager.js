@@ -35,4 +35,19 @@ export class FilamentMapManager {
         this.instances.get(id)?.destroy()
         this.instances.delete(id)
     }
+
+    command(detail) {
+        for (const [id, instance] of this.instances.entries()) {
+            if (!instance.acceptsCommand(detail)) {
+                continue
+            }
+
+            return {
+                id,
+                handled: instance.command(detail),
+            }
+        }
+
+        return { id: null, handled: false }
+    }
 }

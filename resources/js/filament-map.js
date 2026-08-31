@@ -39,3 +39,17 @@ window.addEventListener('filament-map:update', (event) => {
 window.addEventListener('filament-map:destroy', (event) => {
     manager.destroy(event.detail.id)
 })
+
+window.addEventListener('filament-map:command', (event) => {
+    const result = manager.command(event.detail ?? {})
+    const eventName = result.handled
+        ? 'filament-map:command-executed'
+        : 'filament-map:command-error'
+
+    window.dispatchEvent(new CustomEvent(eventName, {
+        detail: {
+            ...event.detail,
+            instanceId: result.id,
+        },
+    }))
+})

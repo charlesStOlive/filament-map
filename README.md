@@ -14,6 +14,7 @@ Publish the config file and run the install command:
 
 ```bash
 php artisan filament-map:install
+php artisan migrate
 ```
 
 ## Usage
@@ -43,6 +44,9 @@ Livewire front-end view:
 
 See [the Livewire viewer documentation](docs/livewire-map-viewer.md) for the
 Filament integration and the event contract used by external point components.
+
+See [the geopoint action contract](docs/geopoint-actions.md) for declarative
+events, marker appearance and the clustering strategy.
 
 ## Configuration
 
