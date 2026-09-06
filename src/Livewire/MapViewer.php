@@ -3,7 +3,9 @@
 namespace CharlesStOlive\FilamentMap\Livewire;
 
 use CharlesStOlive\FilamentMap\Models\Map;
+use CharlesStOlive\FilamentMap\Models\MapScene;
 use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
+use CharlesStOlive\FilamentMap\Services\MapScenePayloadBuilder;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -11,6 +13,8 @@ use Livewire\Component;
 class MapViewer extends Component
 {
     public int|string|null $mapId = null;
+
+    public int|string|null $sceneId = null;
 
     public ?string $eventScope = null;
 
@@ -56,7 +60,9 @@ class MapViewer extends Component
         bool $showControls = true,
         bool $showRefresh = false,
         bool $fitBounds = false,
+        MapScene|int|string|null $scene = null,
     ): void {
+        $this->sceneId = $scene instanceof MapScene ? $scene->getKey() : $scene;
         $map ??= $record;
         $this->mapId = $map instanceof Map ? $map->getKey() : $map;
         $this->height = $height ?? config('filament-map.default.height', 'h-[500px]');
@@ -231,6 +237,12 @@ class MapViewer extends Component
 
     protected function buildPayload(MapPayloadBuilder $payloadBuilder): ?array
     {
+        if ($this->sceneId !== null) {
+            $scene = MapScene::query()->find($this->sceneId);
+
+            return $scene ? app(MapScenePayloadBuilder::class)->build($scene, $this->overrides()) : null;
+        }
+
         $map = $this->mapId !== null ? Map::query()->find($this->mapId) : null;
 
         return $map ? $payloadBuilder->build($map, $this->overrides()) : null;

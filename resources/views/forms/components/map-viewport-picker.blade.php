@@ -15,6 +15,7 @@
 
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     <div
+        wire:key="{{ $mapDomId }}-{{ $mapPayload['scene']['id'] ?? $mapPayload['map']['id'] ?? 'empty' }}"
         wire:ignore
         x-data="filamentMapViewportPicker({
             id: @js($mapDomId),

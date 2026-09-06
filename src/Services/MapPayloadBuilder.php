@@ -67,7 +67,7 @@ class MapPayloadBuilder
         ];
     }
 
-    protected function layer(MapLayer $layer): array
+    public function layer(MapLayer $layer): array
     {
         $pivot = $layer->pivot;
 
@@ -135,7 +135,7 @@ class MapPayloadBuilder
         return null;
     }
 
-    protected function point(GeoPoint $point): array
+    public function point(GeoPoint $point): array
     {
         $pivot = $point->pivot;
         $type = $point->type;

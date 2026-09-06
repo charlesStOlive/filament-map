@@ -17,7 +17,7 @@ Les ressources Cartes, Couches cartographiques, Points géographiques et Types d
 
 `filament-map` reste un moteur cartographique bas niveau :
 
-- il stocke `Map`, `MapLayer`, `GeoPoint` et `GeoPointType` ;
+- il stocke `Map`, `MapScene`, `MapLayer`, `GeoPoint` et `GeoPointType` ;
 - il construit un payload de rendu ;
 - il publie les clics sur les points et les éléments GeoJSON ;
 - il exécute des commandes de carte via un registre JavaScript extensible.
@@ -42,6 +42,18 @@ composer require charlesstolive/filament-map
 php artisan filament-map:install
 php artisan migrate
 ```
+
+## Scènes cartographiques
+
+`MapScene` assemble une carte et les couches de la bibliothèque, avec ordre, visibilité initiale et styles locaux. Les limites de zoom restent celles de la carte. Les points sont fournis par le scénario consommateur et ne sont pas stockés dans la scène.
+
+```blade
+<livewire:filament-map-viewer :scene="$scene" :points="$points" event-scope="voyage" />
+```
+
+En mode scène, fournir ou remplacer des couches externes est refusé. Les anciennes relations directes carte/couche et l’API `map:` sont conservées pour les consommateurs existants ; l’interface de composition utilise désormais les scènes.
+
+Voir [les scènes cartographiques](docs/knowledge-base/map/scenes.md).
 
 ## Viewer Livewire
 

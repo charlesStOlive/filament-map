@@ -3,7 +3,9 @@
 namespace CharlesStOlive\FilamentMap\Filament\Forms\Components;
 
 use CharlesStOlive\FilamentMap\Models\Map;
+use CharlesStOlive\FilamentMap\Models\MapScene;
 use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
+use CharlesStOlive\FilamentMap\Services\MapScenePayloadBuilder;
 use Closure;
 use Filament\Forms\Components\Field;
 use Illuminate\Container\Container;
@@ -17,6 +19,15 @@ class MapViewportPicker extends Field
     protected string $view = 'filament-map::forms.components.map-viewport-picker';
 
     protected Map|int|string|Closure|null $map = null;
+
+    protected MapScene|int|string|Closure|null $scene = null;
+
+    public function scene(MapScene|int|string|Closure|null $scene): static
+    {
+        $this->scene = $scene;
+
+        return $this;
+    }
 
     protected string $type = self::TYPE_VIEWPORT;
 
@@ -130,6 +141,14 @@ class MapViewportPicker extends Field
 
     public function getMapPayload(): ?array
     {
+        $scene = $this->evaluate($this->scene);
+
+        if ($scene !== null && $scene !== '') {
+            $scene = $scene instanceof MapScene ? $scene : MapScene::query()->find($scene);
+
+            return $scene ? app(MapScenePayloadBuilder::class)->build($scene) : null;
+        }
+
         $map = $this->evaluate($this->map);
 
         if (! $map instanceof Map) {

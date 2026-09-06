@@ -69,6 +69,8 @@ return [
     */
     'tables' => [
         'maps' => 'filament_map_maps',
+        'scenes' => 'filament_map_scenes',
+        'scene_layers' => 'filament_map_scene_layer',
         'geo_point_types' => 'filament_map_geo_point_types',
         'geo_points' => 'filament_map_geo_points',
         'layers' => 'filament_map_layers',

@@ -87,6 +87,11 @@ class Map extends Model implements HasMedia
             ->orderByPivot('sort_order');
     }
 
+    public function scenes(): HasMany
+    {
+        return $this->hasMany(MapScene::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(config('filament-map.media_collections.map_preview', 'map_preview'))->singleFile();

@@ -69,6 +69,12 @@ class MapLayer extends Model implements HasMedia
         return $this->hasMany(MapLayerAssignment::class);
     }
 
+    public function scenes(): BelongsToMany
+    {
+        return $this->belongsToMany(MapScene::class, config('filament-map.tables.scene_layers', 'filament_map_scene_layer'))
+            ->withPivot(['sort_order', 'is_visible_by_default', 'style', 'style_rules', 'options'])->withTimestamps();
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection(config('filament-map.media_collections.layer_source', 'layer_source'))->singleFile();

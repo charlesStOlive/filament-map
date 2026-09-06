@@ -6,7 +6,7 @@ order: 20
 
 # Cartes
 
-Une carte assemble une vue initiale, des couches et des points géographiques. Elle peut être utilisée seule ou devenir l'élément principal d'un parcours interactif.
+Une carte définit le cadre géographique : centre, zoom initial, limites de zoom et limites géographiques. Une scène cartographique utilise ce cadre et compose les couches.
 
 ## Créer une carte
 
@@ -40,20 +40,9 @@ Le mode ne remplace pas les couches. Il définit le contexte général dans lequ
 
 Pour éviter une carte vide, utilisez le sélecteur de vue après avoir ajouté les premières données.
 
-## Ajouter des couches
+## Composer les couches
 
-Dans **Couches de la carte**, chaque ligne représente l'utilisation d'une couche sur cette carte :
-
-- **Couche** : donnée cartographique à afficher.
-- **Ordre** : ordre d'empilement. Une couche rendue plus tard peut recouvrir les précédentes.
-- **Visible par défaut** : indique si elle est affichée dès l'ouverture.
-- **Style**, **règles de style** et **options** : surcharges propres à cette carte.
-
-Une surcharge ne modifie pas la couche d'origine. Utilisez-la lorsqu'une même couche doit avoir un rendu différent sur une carte précise.
-
-## Ajouter des points
-
-Les points peuvent être rattachés depuis leur propre écran ou par les outils disponibles sur la carte. Le rattachement ne duplique pas le point : il crée une relation entre la carte et un lieu existant.
+Ouvrez **Scènes cartographiques** pour assembler les couches et définir leur visibilité initiale. Une même carte peut servir à plusieurs scènes. Les points métier restent dans les scénarios qui utilisent ces scènes.
 
 ## Options avancées
 
