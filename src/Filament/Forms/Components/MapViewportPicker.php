@@ -19,9 +19,24 @@ class MapViewportPicker extends Field
 
     protected MapScene|int|string|Closure|null $scene = null;
 
+    protected int|Closure|null $initialZoom = null;
+
     public function scene(MapScene|int|string|Closure|null $scene): static
     {
         $this->scene = $scene;
+
+        return $this;
+    }
+
+    /**
+     * Surcharge ponctuelle du zoom de départ affiché par la vue interactive
+     * (par ex. un peu plus dézoomé qu'à l'accoutumée pour situer un nouveau
+     * point par rapport au précédent), sans toucher au zoom propre de la
+     * scène.
+     */
+    public function initialZoom(int|Closure|null $zoom): static
+    {
+        $this->initialZoom = $zoom;
 
         return $this;
     }
@@ -144,6 +159,12 @@ class MapViewportPicker extends Field
         $overrides = $this->type === self::TYPE_COORDINATE
             ? ['points' => []]
             : [];
+
+        $zoom = $this->evaluate($this->initialZoom);
+
+        if ($zoom !== null) {
+            $overrides['map'] = ['zoom' => $zoom];
+        }
 
         return app(MapPayloadBuilder::class)->build($scene, $overrides);
     }
