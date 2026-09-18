@@ -10,9 +10,9 @@
         wire:ignore
         x-data="filamentMapLayerPreview({
             id: @js($mapDomId),
-            maps: @js($getPreviewMaps()),
+            maps: @js($getPreviewScenes()),
             fields: {
-                map: @js($fieldPath($getMapField())),
+                map: @js($fieldPath($getSceneField())),
                 type: @js($fieldPath($getTypeField())),
                 sourceType: @js($fieldPath($getSourceTypeField())),
                 sourceUrl: @js($fieldPath($getSourceUrlField())),
@@ -40,8 +40,8 @@
         class="space-y-3"
     >
         @once
-            <link rel="stylesheet" href="{{ config('filament-map.leaflet.css_url') }}">
-            <script src="{{ config('filament-map.leaflet.js_url') }}"></script>
+            <link rel="stylesheet" href="{{ config('filament-map.maplibre.css_url') }}">
+            <script src="{{ config('filament-map.maplibre.js_url') }}"></script>
             <script src="{{ asset('vendor/filament-map/map-layer-preview.js') }}"></script>
         @endonce
 

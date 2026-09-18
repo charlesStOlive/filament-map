@@ -1,3 +1,16 @@
+const FALLBACK_STYLE = (tiles) => ({
+    version: 8,
+    sources: {
+        'filament-map-picker-fallback': {
+            type: 'raster',
+            tiles: [tiles.url],
+            tileSize: 256,
+            attribution: tiles.attribution ?? undefined,
+        },
+    },
+    layers: [{ id: 'filament-map-picker-fallback', type: 'raster', source: 'filament-map-picker-fallback' }],
+})
+
 window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
     return {
         map: null,
@@ -11,7 +24,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
             const boot = () => {
                 const element = document.getElementById(config.id)
 
-                if (!element || !window.L || this.map || (config.mapPayload && !window.FilamentMap)) {
+                if (!element || !window.maplibregl || this.map || (config.mapPayload && !window.FilamentMap)) {
                     return
                 }
 
@@ -42,25 +55,20 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                     window.FilamentMap.init(config.id, payload)
                     this.map = window.FilamentMap.instances.get(config.id)?.map ?? null
                 } else {
-                    this.map = L.map(element, {
-                        zoomControl: true,
-                    }).setView([lat, lng], zoom)
-
-                    if (config.tiles.url) {
-                        L.tileLayer(config.tiles.url, {
-                            attribution: config.tiles.attribution ?? undefined,
-                        }).addTo(this.map)
-                    }
+                    this.map = new maplibregl.Map({
+                        container: element,
+                        style: FALLBACK_STYLE(config.tiles),
+                        center: [lng, lat],
+                        zoom,
+                    })
+                    this.map.addControl(new maplibregl.NavigationControl(), 'top-left')
                 }
 
                 if (!this.map) {
                     return
                 }
 
-                this.marker = L.marker([lat, lng], {
-                    draggable: true,
-                }).addTo(this.map)
-
+                this.marker = new maplibregl.Marker({ draggable: true }).setLngLat([lng, lat]).addTo(this.map)
                 this.marker.on('dragend', () => this.syncFromMarker())
 
                 if (config.mapPayload) {
@@ -73,26 +81,28 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                     }
                     window.addEventListener('filament-map:coordinates-picked', this.coordinatesPickedHandler)
                 } else {
-                    this.map.on('click', (event) => this.selectCoordinates(event.latlng.lat, event.latlng.lng))
+                    this.map.on('click', (event) => this.selectCoordinates(event.lngLat.lat, event.lngLat.lng))
                 }
 
                 if (config.type === 'viewport') {
-                    this.map.on('moveend zoomend', () => this.syncFromMap())
+                    this.map.on('moveend', () => this.syncFromMap())
+                    this.map.on('zoomend', () => this.syncFromMap())
                 } else {
-                    this.map.on('moveend zoomend', () => this.syncSummary())
+                    this.map.on('moveend', () => this.syncSummary())
+                    this.map.on('zoomend', () => this.syncSummary())
                 }
 
                 this.observeSize(element)
                 this.syncSummary()
             }
 
-            if (window.L && (!config.mapPayload || window.FilamentMap)) {
+            if (window.maplibregl && (!config.mapPayload || window.FilamentMap)) {
                 boot()
                 return
             }
 
             const interval = window.setInterval(() => {
-                if (window.L && (!config.mapPayload || window.FilamentMap)) {
+                if (window.maplibregl && (!config.mapPayload || window.FilamentMap)) {
                     window.clearInterval(interval)
                     boot()
                 }
@@ -121,7 +131,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                     return
                 }
 
-                this.map.invalidateSize(false)
+                this.map.resize()
 
                 if (config.type === 'coordinate' && config.mapPayload && !this.hasFittedVisibleContent) {
                     this.hasFittedVisibleContent = true
@@ -140,10 +150,10 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         },
 
         syncFromMarker() {
-            const position = this.marker.getLatLng()
+            const position = this.marker.getLngLat()
             const coordinates = this.normalizeCoordinates(position.lat, position.lng)
 
-            this.marker.setLatLng([coordinates.lat, coordinates.lng])
+            this.marker.setLngLat([coordinates.lng, coordinates.lat])
             this.setField(config.latitudePath, coordinates.lat)
             this.setField(config.longitudePath, coordinates.lng)
 
@@ -157,7 +167,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         selectCoordinates(lat, lng) {
             const coordinates = this.normalizeCoordinates(lat, lng)
 
-            this.marker.setLatLng([coordinates.lat, coordinates.lng])
+            this.marker.setLngLat([coordinates.lng, coordinates.lat])
             this.setField(config.latitudePath, coordinates.lat)
             this.setField(config.longitudePath, coordinates.lng)
             this.syncSummary()
@@ -178,7 +188,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
             const coordinates = this.normalizeCoordinates(center.lat, center.lng)
 
             if (syncCenter) {
-                this.marker.setLatLng([coordinates.lat, coordinates.lng])
+                this.marker.setLngLat([coordinates.lng, coordinates.lat])
                 this.setField(config.latitudePath, coordinates.lat)
                 this.setField(config.longitudePath, coordinates.lng)
             }
@@ -213,9 +223,9 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
             }
 
             this.map.fitBounds([
-                [bounds.southWest.lat, bounds.southWest.lng],
-                [bounds.northEast.lat, bounds.northEast.lng],
-            ], { padding: [24, 24] })
+                [bounds.southWest.lng, bounds.southWest.lat],
+                [bounds.northEast.lng, bounds.northEast.lat],
+            ], { padding: 24 })
         },
 
         parseBounds(value) {
@@ -242,7 +252,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
 
             const center = this.map.getCenter()
             const coordinates = this.normalizeCoordinates(center.lat, center.lng)
-            this.summary = `Centre ${coordinates.lat.toFixed(5)}, ${coordinates.lng.toFixed(5)} - zoom ${this.map.getZoom()}`
+            this.summary = `Centre ${coordinates.lat.toFixed(5)}, ${coordinates.lng.toFixed(5)} - zoom ${this.map.getZoom().toFixed(2)}`
         },
     }
 }

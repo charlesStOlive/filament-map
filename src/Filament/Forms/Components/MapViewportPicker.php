@@ -2,13 +2,12 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Forms\Components;
 
-use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapScene;
 use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
-use CharlesStOlive\FilamentMap\Services\MapScenePayloadBuilder;
 use Closure;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Field;
-use Illuminate\Container\Container;
+use Filament\Schemas\Components\Utilities\Set;
 
 class MapViewportPicker extends Field
 {
@@ -17,8 +16,6 @@ class MapViewportPicker extends Field
     public const TYPE_VIEWPORT = 'viewport';
 
     protected string $view = 'filament-map::forms.components.map-viewport-picker';
-
-    protected Map|int|string|Closure|null $map = null;
 
     protected MapScene|int|string|Closure|null $scene = null;
 
@@ -42,13 +39,6 @@ class MapViewportPicker extends Field
     protected string $height = 'h-[420px]';
 
     protected bool $syncBounds = true;
-
-    public function map(Map|int|string|Closure|null $map): static
-    {
-        $this->map = $map;
-
-        return $this;
-    }
 
     public function type(string $type): static
     {
@@ -143,19 +133,11 @@ class MapViewportPicker extends Field
     {
         $scene = $this->evaluate($this->scene);
 
-        if ($scene !== null && $scene !== '') {
-            $scene = $scene instanceof MapScene ? $scene : MapScene::query()->find($scene);
-
-            return $scene ? app(MapScenePayloadBuilder::class)->build($scene) : null;
+        if (! $scene instanceof MapScene) {
+            $scene = ($scene !== null && $scene !== '') ? MapScene::query()->find($scene) : null;
         }
 
-        $map = $this->evaluate($this->map);
-
-        if (! $map instanceof Map) {
-            $map = ($map !== null && $map !== '') ? Map::query()->find($map) : null;
-        }
-
-        if (! $map) {
+        if (! $scene) {
             return null;
         }
 
@@ -163,6 +145,34 @@ class MapViewportPicker extends Field
             ? ['points' => []]
             : [];
 
-        return Container::getInstance()->make(MapPayloadBuilder::class)->build($map, $overrides);
+        return app(MapPayloadBuilder::class)->build($scene, $overrides);
+    }
+
+    /**
+     * Bouton à poser en `->suffixAction()` d'un champ de zoom : récupère le
+     * zoom actuel de la vue interactive la plus proche (même section) et le
+     * pose dans le champ ciblé, sans aller-retour serveur pour lire la carte.
+     */
+    public static function captureZoomAction(string $targetField, string $label = 'Utiliser le zoom actuel'): Action
+    {
+        $actionName = 'capture-zoom-'.$targetField;
+        $script = <<<JS
+            const root = \$el.closest('.fi-section, .fi-modal-window, form');
+            const mapEl = root?.querySelector('[id^="filament-map-viewport-picker-"]');
+            const zoom = mapEl ? window.FilamentMap?.instances?.get(mapEl.id)?.map?.getZoom() : null;
+            if (typeof zoom === 'number') { \$wire.mountAction('{$actionName}', { zoom: Math.round(zoom) }); }
+            JS;
+
+        return Action::make($actionName)
+            ->label($label)
+            ->tooltip($label)
+            ->icon('heroicon-o-viewfinder-circle')
+            ->livewireClickHandlerEnabled(false)
+            ->extraAttributes(['x-on:click' => $script])
+            ->action(function (array $arguments, Set $set) use ($targetField): void {
+                if (array_key_exists('zoom', $arguments)) {
+                    $set($targetField, $arguments['zoom']);
+                }
+            });
     }
 }

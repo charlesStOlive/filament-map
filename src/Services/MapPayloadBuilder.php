@@ -3,35 +3,36 @@
 namespace CharlesStOlive\FilamentMap\Services;
 
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
-use CharlesStOlive\FilamentMap\Models\Map;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
+use CharlesStOlive\FilamentMap\Models\MapScene;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class MapPayloadBuilder
 {
-    public function build(Map $map, array $overrides = []): array
+    public function build(MapScene $scene, array $overrides = []): ?array
     {
-        $map->loadMissing([
-            'layers',
-            'points.type',
-            'points.media',
-            'points.type.media',
-        ]);
+        if (! $scene->is_active) {
+            return null;
+        }
+
+        if (array_key_exists('layers', $overrides)) {
+            throw ValidationException::withMessages(['layers' => 'Les couches se configurent dans la scène cartographique.']);
+        }
+
+        $scene->loadMissing(['layers']);
 
         $payload = [
-            'map' => $this->map($map),
-            'layers' => $map->layers
+            'map' => $this->scene($scene),
+            'layers' => $scene->layers
                 ->where('is_active', true)
                 ->values()
                 ->map(fn (MapLayer $layer): array => $this->layer($layer))
                 ->all(),
-            'points' => $map->points
-                ->where('is_active', true)
-                ->values()
-                ->map(fn (GeoPoint $point): array => $this->point($point))
-                ->all(),
-            'clustering' => $this->clustering($map),
+            'points' => [],
+            'scene' => ['id' => $scene->getKey(), 'key' => $scene->slug],
+            'clustering' => $this->clustering($scene),
             'controls' => [
                 'zoom' => true,
                 'layers' => true,
@@ -48,22 +49,26 @@ class MapPayloadBuilder
         return $payload;
     }
 
-    protected function map(Map $map): array
+    protected function scene(MapScene $scene): array
     {
+        $minZoom = $scene->min_zoom ?? config('filament-map.default.min_zoom');
+        $maxZoom = $scene->max_zoom ?? config('filament-map.default.max_zoom');
+        $zoom = $scene->zoom ?? config('filament-map.default.zoom');
+
         return [
-            'id' => $map->getKey(),
-            'key' => $map->slug,
-            'name' => $map->name,
-            'mode' => $map->mode,
+            'id' => $scene->getKey(),
+            'key' => $scene->slug,
+            'name' => $scene->name,
+            'mode' => $scene->mode,
             'center' => [
-                'lat' => $map->center_latitude !== null ? (float) $map->center_latitude : (float) config('filament-map.default.lat'),
-                'lng' => $map->center_longitude !== null ? (float) $map->center_longitude : (float) config('filament-map.default.lng'),
+                'lat' => $scene->center_latitude !== null ? (float) $scene->center_latitude : (float) config('filament-map.default.lat'),
+                'lng' => $scene->center_longitude !== null ? (float) $scene->center_longitude : (float) config('filament-map.default.lng'),
             ],
-            'zoom' => $map->zoom ?? config('filament-map.default.zoom'),
-            'minZoom' => $map->min_zoom ?? config('filament-map.default.min_zoom'),
-            'maxZoom' => $map->max_zoom ?? config('filament-map.default.max_zoom'),
-            'bounds' => $map->bounds,
-            'options' => $map->options ?? [],
+            'zoom' => max($minZoom, min($maxZoom, $zoom)),
+            'minZoom' => $minZoom,
+            'maxZoom' => $maxZoom,
+            'bounds' => $scene->bounds,
+            'options' => $scene->options ?? [],
         ];
     }
 
@@ -198,13 +203,13 @@ class MapPayloadBuilder
         ];
     }
 
-    protected function clustering(Map $map): array
+    protected function clustering(MapScene $scene): array
     {
-        $mapClustering = Arr::get($map->options ?? [], 'clustering', []);
+        $sceneClustering = Arr::get($scene->options ?? [], 'clustering', []);
 
         return array_replace_recursive(
             config('filament-map.clustering', []),
-            is_array($mapClustering) ? $mapClustering : [],
+            is_array($sceneClustering) ? $sceneClustering : [],
         );
     }
 

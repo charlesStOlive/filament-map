@@ -76,14 +76,6 @@ class GeoPointResource extends Resource implements HasKnowledgeBase
                         ->longitudeField('longitude')
                         ->columnSpanFull(),
                 ]),
-            Section::make('Cartes')
-                ->schema([
-                    Select::make('maps')
-                        ->relationship('maps', 'name')
-                        ->multiple()
-                        ->searchable()
-                        ->preload(),
-                ]),
             Section::make('Apparence')
                 ->description('Les comportements sont désormais définis centralement dans une orchestration.')
                 ->schema([
@@ -106,7 +98,6 @@ class GeoPointResource extends Resource implements HasKnowledgeBase
                 TextColumn::make('type.name')->label('Type')->badge()->sortable(),
                 TextColumn::make('latitude')->sortable(),
                 TextColumn::make('longitude')->sortable(),
-                TextColumn::make('maps_count')->counts('maps')->label('Cartes'),
                 IconColumn::make('is_active')->boolean(),
             ])
             ->recordActions([EditAction::make()])

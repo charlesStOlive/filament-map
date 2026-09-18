@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,13 +10,16 @@ return new class extends Migration
     {
         Schema::create(config('filament-map.tables.scenes', 'filament_map_scenes'), function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('map_id')->constrained(config('filament-map.tables.maps', 'filament_map_maps'))->restrictOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
+            $table->string('mode')->default('geojson');
             $table->decimal('center_latitude', 10, 7)->nullable();
             $table->decimal('center_longitude', 10, 7)->nullable();
             $table->unsignedTinyInteger('zoom')->nullable();
+            $table->unsignedTinyInteger('min_zoom')->nullable();
+            $table->unsignedTinyInteger('max_zoom')->nullable();
+            $table->json('bounds')->nullable();
             $table->json('options')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
@@ -35,22 +37,18 @@ return new class extends Migration
             $table->unique(['map_scene_id', 'map_layer_id'], 'scene_layer_unique');
         });
 
-        DB::table(config('filament-map.tables.maps', 'filament_map_maps'))->orderBy('id')->each(function ($map): void {
-            $sceneId = DB::table(config('filament-map.tables.scenes', 'filament_map_scenes'))->insertGetId([
-                'map_id' => $map->id, 'name' => $map->name, 'slug' => $map->slug,
-                'is_active' => $map->is_active && $map->deleted_at === null,
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-            foreach (DB::table(config('filament-map.tables.map_layers', 'filament_map_map_layer'))->where('map_id', $map->id)->get() as $assignment) {
-                $data = (array) $assignment;
-                unset($data['id'], $data['map_id']);
-                DB::table(config('filament-map.tables.scene_layers', 'filament_map_scene_layer'))->insert(['map_scene_id' => $sceneId, ...$data]);
-            }
+        Schema::table(config('filament-map.tables.layers', 'filament_map_layers'), function (Blueprint $table): void {
+            $table->foreign('preview_scene_id')
+                ->references('id')->on(config('filament-map.tables.scenes', 'filament_map_scenes'))
+                ->nullOnDelete();
         });
     }
 
     public function down(): void
     {
+        Schema::table(config('filament-map.tables.layers', 'filament_map_layers'), function (Blueprint $table): void {
+            $table->dropForeign(['preview_scene_id']);
+        });
         Schema::dropIfExists(config('filament-map.tables.scene_layers', 'filament_map_scene_layer'));
         Schema::dropIfExists(config('filament-map.tables.scenes', 'filament_map_scenes'));
     }

@@ -12,6 +12,8 @@ use CharlesStOlive\FilamentMap\Livewire\MapViewer;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use CharlesStOlive\FilamentMap\Models\MapScene;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CodeEditor;
+use Filament\Forms\Components\CodeEditor\Enums\Language;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -56,8 +58,15 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
                     TextInput::make('name')->label('Nom')->required()->live(onBlur: true)
                         ->afterStateUpdated(fn ($state, callable $set, string $operation) => $operation === 'create' ? $set('slug', Str::slug($state ?? '')) : null),
                     TextInput::make('slug')->label('Clé stable')->required()->unique(ignoreRecord: true),
-                    Select::make('map_id')->label('Carte de référence')->relationship('map', 'name')
-                        ->required()->searchable()->preload()->live(),
+                    Select::make('mode')
+                        ->options([
+                            'geojson' => 'GeoJSON stylisé',
+                            'openstreetmap' => 'OpenStreetMap',
+                            'hybrid' => 'Hybride',
+                            'svg_overlay' => 'SVG géoréférencé',
+                        ])
+                        ->default('geojson')
+                        ->required(),
                     Toggle::make('is_active')->label('Active')->default(true),
                     Textarea::make('description')->columnSpanFull(),
                 ]),
@@ -74,20 +83,42 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
                     ->itemLabel(fn (array $state) => MapLayer::find($state['map_layer_id'] ?? null)?->name)
                     ->addActionLabel('Utiliser une couche'),
             ]),
-            Section::make('Cadrage initial')->description('Laisser vide pour reprendre celui de la carte. Les limites de zoom restent définies par la carte.')
+            Section::make('Cadrage initial')
                 ->columns(3)->schema([
                     TextInput::make('center_latitude')->label('Latitude')->numeric()->minValue(-90)->maxValue(90)->live(onBlur: true),
                     TextInput::make('center_longitude')->label('Longitude')->numeric()->minValue(-180)->maxValue(180)->live(onBlur: true),
-                    TextInput::make('zoom')->numeric()->minValue(0)->maxValue(22)->live(onBlur: true),
+                    TextInput::make('zoom')->numeric()->minValue(0)->maxValue(22)->live(onBlur: true)
+                        ->suffixAction(MapViewportPicker::captureZoomAction('zoom')),
+                    TextInput::make('min_zoom')->numeric()->minValue(0)->maxValue(22)
+                        ->suffixAction(MapViewportPicker::captureZoomAction('min_zoom')),
+                    TextInput::make('max_zoom')->numeric()->minValue(0)->maxValue(22)
+                        ->suffixAction(MapViewportPicker::captureZoomAction('max_zoom')),
                     MapViewportPicker::make('viewport')->dehydrated(false)->syncBounds(false)
-                        ->map(fn (callable $get) => $get('map_id'))->scene(fn (?MapScene $record) => $record)
+                        ->scene(fn (?MapScene $record, callable $get): MapScene => $record ?? new MapScene([
+                            'center_latitude' => $get('center_latitude'),
+                            'center_longitude' => $get('center_longitude'),
+                            'zoom' => $get('zoom'),
+                            'min_zoom' => $get('min_zoom'),
+                            'max_zoom' => $get('max_zoom'),
+                            'mode' => $get('mode'),
+                            'is_active' => true,
+                        ]))
                         ->columnSpanFull(),
                 ]),
             Section::make('Aperçu enregistré')->schema([
                 LivewireComponent::make(MapViewer::class, fn (?MapScene $record) => ['scene' => $record, 'showRefresh' => true])
                     ->key(fn (?MapScene $record) => 'scene-preview-'.($record?->id ?? 'new')),
             ])->visible(fn (?MapScene $record) => (bool) $record?->exists),
-            Section::make('Options avancées')->collapsed()->schema([KeyValue::make('options')]),
+            Section::make('Options avancées')->collapsed()->schema([
+                CodeEditor::make('bounds')
+                    ->label('Bounds JSON')
+                    ->language(Language::Json)
+                    ->wrap()
+                    ->formatStateUsing(fn ($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
+                    ->dehydrateStateUsing(fn ($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
+                    ->helperText('Zone visible de la scène, remplie par la vue interactive.'),
+                KeyValue::make('options'),
+            ]),
         ]);
     }
 
@@ -102,7 +133,7 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
     {
         return $table->columns([
             TextColumn::make('name')->label('Scène')->searchable(),
-            TextColumn::make('map.name')->label('Carte'),
+            TextColumn::make('mode')->badge()->sortable(),
             TextColumn::make('layers_count')->counts('layers')->label('Couches'),
             IconColumn::make('is_active')->label('Active')->boolean(),
         ])->recordActions([EditAction::make()]);

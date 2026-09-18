@@ -1,5 +1,5 @@
 @php
-    $assetsPath = config('filament-map.leaflet.assets_path', 'vendor/filament-map/filament-map.js');
+    $assetsPath = config('filament-map.maplibre.assets_path', 'vendor/filament-map/filament-map.js');
 @endphp
 
 <div class="{{ trim($width . ' ' . $class) }}" data-filament-map-viewer data-filament-map-scope="{{ $eventScope }}">
@@ -27,8 +27,8 @@
 
 @assets
     <link rel="stylesheet"
-        href="{{ config('filament-map.leaflet.css_url', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css') }}">
-    <script src="{{ config('filament-map.leaflet.js_url', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js') }}"></script>
+        href="{{ config('filament-map.maplibre.css_url', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css') }}">
+    <script src="{{ config('filament-map.maplibre.js_url', 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js') }}"></script>
     <script type="module" src="{{ asset($assetsPath) }}"></script>
 @endassets
 

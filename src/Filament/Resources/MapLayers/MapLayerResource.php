@@ -51,9 +51,9 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
             Section::make('Couche')
                 ->columns(2)
                 ->schema([
-                    Select::make('preview_map_id')
-                        ->label('Carte d’exemple')
-                        ->relationship('previewMap', 'name')
+                    Select::make('preview_scene_id')
+                        ->label('Scène d’exemple')
+                        ->relationship('previewScene', 'name')
                         ->searchable()
                         ->preload()
                         ->live()
@@ -162,7 +162,7 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
         return $table
             ->columns([
                 TextColumn::make('name')->label('Nom')->searchable()->sortable(),
-                TextColumn::make('previewMap.name')->label('Carte d’exemple')->toggleable(),
+                TextColumn::make('previewScene.name')->label('Scène d’exemple')->toggleable(),
                 TextColumn::make('type')->badge()->sortable(),
                 IconColumn::make('is_active')->boolean(),
             ])

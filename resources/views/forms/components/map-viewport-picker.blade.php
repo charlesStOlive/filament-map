@@ -7,9 +7,9 @@
 @endphp
 
 @assets
-    <link rel="stylesheet" href="{{ config('filament-map.leaflet.css_url') }}">
-    <script src="{{ config('filament-map.leaflet.js_url') }}"></script>
-    <script type="module" src="{{ asset(config('filament-map.leaflet.assets_path', 'vendor/filament-map/filament-map.js')) }}"></script>
+    <link rel="stylesheet" href="{{ config('filament-map.maplibre.css_url') }}">
+    <script src="{{ config('filament-map.maplibre.js_url') }}"></script>
+    <script type="module" src="{{ asset(config('filament-map.maplibre.assets_path', 'vendor/filament-map/filament-map.js')) }}"></script>
     <script src="{{ asset('vendor/filament-map/map-viewport-picker.js') }}"></script>
 @endassets
 

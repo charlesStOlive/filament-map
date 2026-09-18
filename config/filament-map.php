@@ -68,14 +68,11 @@ return [
     |--------------------------------------------------------------------------
     */
     'tables' => [
-        'maps' => 'filament_map_maps',
         'scenes' => 'filament_map_scenes',
         'scene_layers' => 'filament_map_scene_layer',
         'geo_point_types' => 'filament_map_geo_point_types',
         'geo_points' => 'filament_map_geo_points',
         'layers' => 'filament_map_layers',
-        'map_layers' => 'filament_map_map_layer',
-        'map_geo_point' => 'filament_map_geo_map_point',
     ],
 
     /*
@@ -84,7 +81,6 @@ return [
     |--------------------------------------------------------------------------
     */
     'media_collections' => [
-        'map_preview' => 'map_preview',
         'layer_source' => 'layer_source',
         'default_marker_image' => 'default_marker_image',
         'marker_image' => 'marker_image',
@@ -92,13 +88,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Leaflet assets
+    | MapLibre GL assets
     |--------------------------------------------------------------------------
     */
-    'leaflet' => [
+    'maplibre' => [
         'assets_path' => 'vendor/filament-map/filament-map.js',
-        'css_url' => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-        'js_url' => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+        'css_url' => 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css',
+        'js_url' => 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js',
     ],
 
 ];

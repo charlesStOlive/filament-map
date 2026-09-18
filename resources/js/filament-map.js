@@ -5,7 +5,7 @@ const manager = new FilamentMapManager()
 window.FilamentMap = manager
 
 const bootPendingMaps = () => {
-    if (!window.L) {
+    if (!window.maplibregl) {
         window.setTimeout(bootPendingMaps, 50)
         return
     }
@@ -19,7 +19,7 @@ const bootPendingMaps = () => {
 bootPendingMaps()
 
 window.addEventListener('filament-map:init', (event) => {
-    if (!window.L) {
+    if (!window.maplibregl) {
         window.__filamentMapPending = window.__filamentMapPending || {}
         window.__filamentMapPending[event.detail.id] = event.detail.payload
         return

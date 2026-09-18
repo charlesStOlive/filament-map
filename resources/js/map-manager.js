@@ -1,4 +1,4 @@
-import { LeafletMapInstance } from './leaflet-map-instance.js'
+import { MapLibreMapInstance } from './maplibre-map-instance.js'
 
 export class FilamentMapManager {
     constructor() {
@@ -10,7 +10,7 @@ export class FilamentMapManager {
     init(id, payload) {
         const element = document.getElementById(id)
 
-        if (!element || !window.L || !payload?.map) {
+        if (!element || !window.maplibregl || !payload?.map) {
             return
         }
 
@@ -19,7 +19,7 @@ export class FilamentMapManager {
             return
         }
 
-        const instance = new LeafletMapInstance(element, payload)
+        const instance = new MapLibreMapInstance(element, payload)
         this.instances.set(id, instance)
         instance.mount()
     }
@@ -49,6 +49,12 @@ export class FilamentMapManager {
 
     unregisterCommand(name) {
         this.commands.delete(name)
+        return this
+    }
+
+    /** Point d'extension "driver" côté JS : ajouter un type de couche sans forker le package. */
+    registerLayerRenderer(type, renderer) {
+        MapLibreMapInstance.registerLayerRenderer(type, renderer)
         return this
     }
 
@@ -84,7 +90,7 @@ export class FilamentMapManager {
                 return false
             }
 
-            instance.map.setZoom(zoom, { animate: detail.payload?.animate ?? true })
+            instance.map.easeTo({ zoom, duration: (detail.payload?.animate ?? true) ? 300 : 0 })
             return true
         })
         this.registerCommand('move-to', ({ instance, detail }) => {
@@ -98,7 +104,7 @@ export class FilamentMapManager {
                 return false
             }
 
-            instance.map.setView([lat, lng], zoom, { animate: detail.payload?.animate ?? true })
+            instance.map.easeTo({ center: [lng, lat], zoom, duration: (detail.payload?.animate ?? true) ? 300 : 0 })
             return true
         })
         this.registerCommand('fit-bounds', ({ instance }) => {
@@ -111,19 +117,11 @@ export class FilamentMapManager {
             const expected = detail.payload?.value
             const style = detail.payload?.style ?? { color: '#f59e0b', weight: 5, fillOpacity: 0.7 }
 
-            if (!layer?.eachLayer || !property) {
+            if (!layer?.filamentMapKind || layer.filamentMapKind !== 'geojson' || !property) {
                 return false
             }
 
-            layer.eachLayer((featureLayer) => {
-                const matches = String(featureLayer.feature?.properties?.[property]) === String(expected)
-
-                if (matches) {
-                    featureLayer.setStyle?.(style)
-                    featureLayer.bringToFront?.()
-                }
-            })
-
+            layer.highlightFeature?.(property, expected, style)
             return true
         })
     }

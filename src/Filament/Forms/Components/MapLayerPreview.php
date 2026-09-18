@@ -2,14 +2,14 @@
 
 namespace CharlesStOlive\FilamentMap\Filament\Forms\Components;
 
-use CharlesStOlive\FilamentMap\Models\Map;
+use CharlesStOlive\FilamentMap\Models\MapScene;
 use Filament\Forms\Components\Field;
 
 class MapLayerPreview extends Field
 {
     protected string $view = 'filament-map::forms.components.map-layer-preview';
 
-    protected string $mapField = 'preview_map_id';
+    protected string $sceneField = 'preview_scene_id';
 
     protected string $typeField = 'type';
 
@@ -31,9 +31,9 @@ class MapLayerPreview extends Field
 
     protected string $height = 'h-[420px]';
 
-    public function mapField(string $field): static
+    public function sceneField(string $field): static
     {
-        $this->mapField = $field;
+        $this->sceneField = $field;
 
         return $this;
     }
@@ -45,9 +45,9 @@ class MapLayerPreview extends Field
         return $this;
     }
 
-    public function getMapField(): string
+    public function getSceneField(): string
     {
-        return $this->mapField;
+        return $this->sceneField;
     }
 
     public function getTypeField(): string
@@ -100,21 +100,21 @@ class MapLayerPreview extends Field
         return $this->height;
     }
 
-    public function getPreviewMaps(): array
+    public function getPreviewScenes(): array
     {
-        return Map::query()
+        return MapScene::query()
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'center_latitude', 'center_longitude', 'zoom', 'bounds'])
-            ->mapWithKeys(fn (Map $map): array => [
-                $map->getKey() => [
-                    'name' => $map->name,
+            ->mapWithKeys(fn (MapScene $scene): array => [
+                $scene->getKey() => [
+                    'name' => $scene->name,
                     'center' => [
-                        'lat' => $map->center_latitude !== null ? (float) $map->center_latitude : (float) config('filament-map.default.lat'),
-                        'lng' => $map->center_longitude !== null ? (float) $map->center_longitude : (float) config('filament-map.default.lng'),
+                        'lat' => $scene->center_latitude !== null ? (float) $scene->center_latitude : (float) config('filament-map.default.lat'),
+                        'lng' => $scene->center_longitude !== null ? (float) $scene->center_longitude : (float) config('filament-map.default.lng'),
                     ],
-                    'zoom' => $map->zoom ?? config('filament-map.default.zoom'),
-                    'bounds' => $map->bounds,
+                    'zoom' => $scene->zoom ?? config('filament-map.default.zoom'),
+                    'bounds' => $scene->bounds,
                 ],
             ])
             ->all();

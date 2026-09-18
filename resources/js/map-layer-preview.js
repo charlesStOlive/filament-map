@@ -1,38 +1,51 @@
+const FALLBACK_STYLE = (tiles) => ({
+    version: 8,
+    sources: {
+        'filament-map-preview-fallback': {
+            type: 'raster',
+            tiles: [tiles.url],
+            tileSize: 256,
+            attribution: tiles.attribution ?? undefined,
+        },
+    },
+    layers: [{ id: 'filament-map-preview-fallback', type: 'raster', source: 'filament-map-preview-fallback' }],
+})
+
 window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
     return {
         map: null,
-        baseLayer: null,
         previewLayer: null,
         message: '',
+        fallbackStyle: null,
 
         init() {
             const boot = () => {
                 const element = document.getElementById(config.id)
 
-                if (!element || !window.L || this.map) {
+                if (!element || !window.maplibregl || this.map) {
                     return
                 }
 
                 const mapConfig = this.currentMapConfig()
+                this.fallbackStyle = FALLBACK_STYLE(config.tiles)
 
-                this.map = L.map(element, { zoomControl: true })
-                    .setView([mapConfig.center.lat, mapConfig.center.lng], mapConfig.zoom)
-
-                this.baseLayer = L.tileLayer(config.tiles.url, {
-                    attribution: config.tiles.attribution ?? undefined,
-                    maxZoom: 19,
-                }).addTo(this.map)
-
-                this.refresh()
+                this.map = new maplibregl.Map({
+                    container: element,
+                    style: this.fallbackStyle,
+                    center: [mapConfig.center.lng, mapConfig.center.lat],
+                    zoom: mapConfig.zoom,
+                })
+                this.map.addControl(new maplibregl.NavigationControl(), 'top-left')
+                this.map.on('load', () => this.refresh())
             }
 
-            if (window.L) {
+            if (window.maplibregl) {
                 boot()
                 return
             }
 
             const interval = window.setInterval(() => {
-                if (window.L) {
+                if (window.maplibregl) {
                     window.clearInterval(interval)
                     boot()
                 }
@@ -54,7 +67,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
         },
 
         refresh() {
-            if (!this.map) {
+            if (!this.map || !this.map.isStyleLoaded()) {
                 return
             }
 
@@ -72,7 +85,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            if (layer.type === 'geojson') {
+            if (layer.type === 'geojson' || layer.type === 'points') {
                 this.previewGeoJson(layer)
                 return
             }
@@ -169,24 +182,47 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            this.previewLayer = L.tileLayer(url, layer.options).addTo(this.map)
+            const styleUrl = layer.options?.style_url ?? layer.options?.styleUrl
+
+            if (styleUrl) {
+                this.map.setStyle(styleUrl)
+                this.previewLayer = { type: 'style' }
+                this.message = 'Style prévisualisé.'
+                return
+            }
+
+            const id = 'filament-map-preview-tile'
+            this.map.addSource(id, { type: 'raster', tiles: [url], tileSize: 256 })
+            this.map.addLayer({ id, type: 'raster', source: id })
+            this.previewLayer = { type: 'raster', ids: [id] }
             this.message = 'Fond de tuiles prévisualisé.'
         },
 
         previewGeoJson(layer) {
             const createLayer = (data) => {
-                this.previewLayer = L.geoJSON(data, {
-                    style: (feature) => this.styleForFeature(feature, layer),
-                    onEachFeature(feature, leafletLayer) {
-                        const title = feature?.properties?.name ?? feature?.properties?.title
+                const sourceId = 'filament-map-preview-geojson'
+                const fillId = `${sourceId}-fill`
+                const lineId = `${sourceId}-line`
+                const circleId = `${sourceId}-circle`
 
-                        if (title) {
-                            leafletLayer.bindTooltip(String(title))
-                        }
-                    },
-                    ...layer.options,
-                }).addTo(this.map)
+                this.map.addSource(sourceId, { type: 'geojson', data })
+                this.map.addLayer({
+                    id: fillId, type: 'fill', source: sourceId,
+                    filter: ['==', ['geometry-type'], 'Polygon'],
+                    paint: { 'fill-color': layer.style?.fillColor ?? '#3388ff', 'fill-opacity': layer.style?.fillOpacity ?? 0.2 },
+                })
+                this.map.addLayer({
+                    id: lineId, type: 'line', source: sourceId,
+                    filter: ['in', ['geometry-type'], ['literal', ['LineString', 'Polygon']]],
+                    paint: { 'line-color': layer.style?.color ?? '#3388ff', 'line-width': layer.style?.weight ?? 3 },
+                })
+                this.map.addLayer({
+                    id: circleId, type: 'circle', source: sourceId,
+                    filter: ['==', ['geometry-type'], 'Point'],
+                    paint: { 'circle-color': layer.style?.fillColor ?? layer.style?.color ?? '#3388ff', 'circle-radius': 6 },
+                })
 
+                this.previewLayer = { type: 'geojson', ids: [fillId, lineId, circleId], sourceId }
                 this.fitLayer()
                 this.message = 'GeoJSON prévisualisé.'
             }
@@ -208,12 +244,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            fetch(url)
-                .then((response) => response.json())
-                .then((data) => createLayer(data))
-                .catch((error) => {
-                    this.message = `Impossible de charger le GeoJSON : ${error.message}`
-                })
+            createLayer(url)
         },
 
         previewSvgOverlay(layer) {
@@ -225,47 +256,96 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            this.previewLayer = L.imageOverlay(url, [
-                [bounds.southWest.lat, bounds.southWest.lng],
-                [bounds.northEast.lat, bounds.northEast.lng],
-            ], layer.options).addTo(this.map)
+            const id = 'filament-map-preview-svg'
+            const coordinates = [
+                [bounds.southWest.lng, bounds.northEast.lat],
+                [bounds.northEast.lng, bounds.northEast.lat],
+                [bounds.northEast.lng, bounds.southWest.lat],
+                [bounds.southWest.lng, bounds.southWest.lat],
+            ]
+
+            this.map.addSource(id, { type: 'image', url, coordinates })
+            this.map.addLayer({ id, type: 'raster', source: id })
+            this.previewLayer = {
+                type: 'svg',
+                ids: [id],
+                bounds: [[bounds.southWest.lng, bounds.southWest.lat], [bounds.northEast.lng, bounds.northEast.lat]],
+            }
 
             this.fitLayer()
             this.message = 'SVG overlay prévisualisé.'
         },
 
-        styleForFeature(feature, layer) {
-            const baseStyle = layer.style ?? {}
-
-            for (const rule of layer.styleRules ?? []) {
-                const property = rule?.when?.property
-                const equals = rule?.when?.equals
-
-                if (property && feature?.properties?.[property] === equals) {
-                    return { ...baseStyle, ...(rule.style ?? {}) }
-                }
-            }
-
-            return baseStyle
-        },
-
         fitLayer() {
-            if (!this.previewLayer?.getBounds) {
+            if (!this.previewLayer) {
                 return
             }
 
-            const bounds = this.previewLayer.getBounds()
+            if (this.previewLayer.bounds) {
+                this.map.fitBounds(this.previewLayer.bounds, { padding: 24 })
+                return
+            }
 
-            if (bounds.isValid()) {
-                this.map.fitBounds(bounds, { padding: [24, 24] })
+            if (this.previewLayer.sourceId) {
+                const features = this.map.querySourceFeatures(this.previewLayer.sourceId)
+                const bounds = this.boundsOf(features)
+
+                if (bounds) {
+                    this.map.fitBounds(bounds, { padding: 24 })
+                }
             }
         },
 
-        clearPreviewLayer() {
-            if (this.previewLayer) {
-                this.previewLayer.removeFrom(this.map)
-                this.previewLayer = null
+        boundsOf(features) {
+            let west = Infinity
+            let south = Infinity
+            let east = -Infinity
+            let north = -Infinity
+
+            const visit = (coords) => {
+                if (typeof coords[0] === 'number') {
+                    const [lng, lat] = coords
+                    west = Math.min(west, lng)
+                    east = Math.max(east, lng)
+                    south = Math.min(south, lat)
+                    north = Math.max(north, lat)
+                    return
+                }
+
+                coords.forEach(visit)
             }
+
+            for (const feature of features) {
+                if (feature.geometry?.coordinates) {
+                    visit(feature.geometry.coordinates)
+                }
+            }
+
+            return Number.isFinite(west) ? [[west, south], [east, north]] : null
+        },
+
+        clearPreviewLayer() {
+            if (!this.previewLayer) {
+                return
+            }
+
+            if (this.previewLayer.type === 'style') {
+                this.map.setStyle(this.fallbackStyle)
+            } else {
+                for (const id of this.previewLayer.ids ?? []) {
+                    if (this.map.getLayer(id)) {
+                        this.map.removeLayer(id)
+                    }
+                }
+
+                const sourceId = this.previewLayer.sourceId ?? this.previewLayer.ids?.[0]
+
+                if (sourceId && this.map.getSource(sourceId)) {
+                    this.map.removeSource(sourceId)
+                }
+            }
+
+            this.previewLayer = null
         },
 
         parseJson(value, fallback) {

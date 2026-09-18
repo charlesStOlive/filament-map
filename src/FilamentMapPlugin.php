@@ -6,7 +6,6 @@ use CharlesStOlive\FilamentMap\Filament\Clusters\MapCluster;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\GeoPointResource;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\GeoPointTypeResource;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\MapLayerResource;
-use CharlesStOlive\FilamentMap\Filament\Resources\Maps\MapResource;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\MapSceneResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
@@ -45,10 +44,6 @@ class FilamentMapPlugin implements Plugin
 
         if (config('filament-map.resources.scenes', true)) {
             $resources[] = MapSceneResource::class;
-        }
-
-        if (config('filament-map.resources.maps', true)) {
-            $resources[] = MapResource::class;
         }
 
         if (config('filament-map.resources.layers', true)) {
