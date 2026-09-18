@@ -108,6 +108,14 @@ export class MapLibreMapInstance {
             return
         }
 
+        // Une mise à jour peut arriver avant la fin du chargement du style
+        // initial (ex. un second appel rapproché) : addSource/addLayer y
+        // lèvent "Style is not done loading" tant que ce n'est pas le cas.
+        if (!this.map.isStyleLoaded()) {
+            this.map.once('load', () => this.update(payload))
+            return
+        }
+
         if (
             previousMap.id !== payload.map.id
             || previousMap.center?.lat !== payload.map.center?.lat
