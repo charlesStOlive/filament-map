@@ -25,7 +25,9 @@ return [
     */
     'tiles' => [
         'provider' => 'openstreetmap',
-        'url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        // MapLibre GL ne sait pas substituer {s} (spécifique à Leaflet) : un
+        // seul sous-domaine, pas de rotation.
+        'url' => 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         'token' => env('FILAMENT_MAP_TOKEN', null),
     ],

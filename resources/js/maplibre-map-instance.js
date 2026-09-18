@@ -132,9 +132,9 @@ export class MapLibreMapInstance {
 
     destroy() {
         this.map?.off('click', this.handleMapClick)
-        this.layerControl?.remove()
         this.map?.remove()
         this.map = null
+        this.layerControl = null
         this.layers.clear()
     }
 
