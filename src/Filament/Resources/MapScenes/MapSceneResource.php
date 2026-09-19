@@ -47,7 +47,7 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
 
     public static function getDocumentation(): array|string
     {
-        return ['map.scenes', 'map.cartes', 'map.couches'];
+        return ['map.scenes', 'map.couches'];
     }
 
     public static function form(Schema $schema): Schema

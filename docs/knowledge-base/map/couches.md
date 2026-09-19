@@ -6,11 +6,11 @@ order: 30
 
 # Couches cartographiques
 
-Une couche est un jeu de données affichable sur une ou plusieurs cartes : fond de tuiles, frontières, itinéraire, zones, points calculés ou illustration SVG.
+Une couche est un jeu de données affichable sur une ou plusieurs scènes cartographiques : fond de tuiles, frontières, itinéraire, zones, points calculés ou illustration SVG.
 
 ## Informations générales
 
-- **Carte d'aperçu** : carte utilisée uniquement pour contrôler visuellement la couche. Elle ne rattache pas automatiquement la couche à cette carte.
+- **Scène d'exemple** : scène utilisée uniquement pour contrôler visuellement la couche. Elle ne rattache pas automatiquement la couche à cette scène.
 - **Nom** : libellé compréhensible dans l'administration.
 - **Clé** : identifiant technique unique. Gardez-la stable car le code ou un parcours peut l'utiliser.
 - **Type** : nature du rendu.
@@ -29,7 +29,7 @@ Une couche est un jeu de données affichable sur une ou plusieurs cartes : fond 
 
 ### URL
 
-Les données sont chargées depuis une adresse distante ou publique. Pour des tuiles Leaflet, l'URL ressemble souvent à :
+Les données sont chargées depuis une adresse distante ou publique. Pour un fond de tuiles, l'URL ressemble souvent à :
 
 ```text
 https://serveur.example/{z}/{x}/{y}.png
@@ -47,7 +47,7 @@ Le fichier est téléversé sur le stockage public. Les formats attendus sont no
 
 ## Style
 
-Le champ **Style** contient les propriétés Leaflet appliquées à l'ensemble de la couche, par exemple :
+Le champ **Style** contient les propriétés MapLibre appliquées à l'ensemble de la couche, par exemple :
 
 ```json
 {
@@ -68,7 +68,7 @@ Les **options** pilotent le comportement du moteur de rendu : opacité, attribut
 ## Diagnostiquer un aperçu vide
 
 1. Vérifiez que la couche est active.
-2. Vérifiez la carte d'aperçu et sa zone visible.
+2. Vérifiez la scène d'exemple et sa zone visible.
 3. Ouvrez directement l'URL ou le fichier source.
 4. Validez la syntaxe JSON.
 5. Pour du GeoJSON, vérifiez l'ordre des coordonnées : longitude puis latitude.

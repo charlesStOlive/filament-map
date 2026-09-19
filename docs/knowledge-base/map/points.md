@@ -6,7 +6,7 @@ order: 40
 
 # Points géographiques
 
-Un point géographique représente un lieu précis. Il peut être rattaché à plusieurs cartes et utilisé comme source d'un événement dans un parcours interactif.
+Un point géographique représente un lieu précis, indépendant de toute scène cartographique. Il devient visible et interactif en étant utilisé comme hotpoint dans un ou plusieurs parcours interactifs, où il peut aussi servir de source d'événement.
 
 ## Informations du point
 
@@ -26,11 +26,11 @@ Un point sans type reste utilisable, mais son apparence dépendra davantage des 
 
 Dans la plupart des formulaires, la latitude est affichée avant la longitude. Dans un fichier GeoJSON, l'ordre est généralement longitude puis latitude. Cette différence est une cause fréquente de points placés au mauvais endroit.
 
-## Rattacher le point à des cartes
+## Afficher le point sur une scène
 
-Le champ **Cartes** accepte plusieurs cartes. Le point reste un seul enregistrement partagé. Le retirer d'une carte ne le supprime pas de la bibliothèque.
+Il n'existe pas de champ pour rattacher un point directement à une scène cartographique : ce lien se fait uniquement à travers un parcours interactif (ou l'automatisation Voyage simplifié). Le point reste un seul enregistrement partagé, réutilisable par plusieurs parcours ; le retirer d'un parcours ne le supprime pas de la bibliothèque.
 
-Un rattachement peut aussi porter des informations propres à une carte : ordre, visibilité, libellé, infobulle, contenu de popup, style et options. Ces valeurs ont priorité sur les réglages généraux du point.
+Un parcours peut cependant porter ses propres réglages pour l'occurrence d'un point sur sa scène, par exemple sa clé, son ordre d'affichage ou son infobulle. Ces réglages vivent dans le parcours, pas sur le point lui-même, et n'affectent pas les autres parcours qui réutilisent ce même point.
 
 ## Apparence
 
@@ -48,7 +48,7 @@ Le hotpoint n'est donc pas une deuxième copie du lieu. C'est le rôle joué par
 
 ## Avant de rattacher à un parcours
 
-- Vérifiez le point sur une carte.
+- Vérifiez le point sur une scène (aperçu).
 - Donnez-lui un slug stable.
 - Confirmez son état actif.
 - Choisissez son type et son apparence.

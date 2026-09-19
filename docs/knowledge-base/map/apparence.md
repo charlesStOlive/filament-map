@@ -14,17 +14,18 @@ Du plus général au plus précis :
 
 1. configuration globale du plugin ;
 2. style du type de point ;
-3. style du point géographique ;
-4. style du rattachement entre le point et une carte.
+3. style du point géographique lui-même.
 
-Si une couleur modifiée sur le type ne semble pas appliquée, vérifiez les niveaux 3 et 4. Une surcharge plus précise peut encore imposer l'ancienne valeur.
+Si une couleur modifiée sur le type ne semble pas appliquée, vérifiez le niveau 3 : le style propre au point garde la priorité tant qu'il définit la même clé.
+
+Un point géographique n'étant rattaché à aucune scène (voir *Points géographiques*), il n'existe pas de niveau de surcharge supplémentaire « par occurrence sur une scène » au niveau de la cartographie elle-même. Un parcours interactif peut néanmoins imposer ses propres réglages d'affichage pour un point donné (infobulle, ordre...), mais ce mécanisme vit côté parcours, pas côté marqueur.
 
 ## Priorité d'une couche
 
 1. style et options enregistrés sur la couche ;
-2. style, règles et options du rattachement de cette couche à une carte.
+2. style, règles et options du rattachement de cette couche à une scène cartographique.
 
-Une surcharge au niveau de la carte est adaptée à une exception. Pour une correction générale, modifiez la couche elle-même.
+Une surcharge au niveau de la scène est adaptée à une exception. Pour une correction générale, modifiez la couche elle-même.
 
 ## Différence entre style et options
 

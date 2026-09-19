@@ -90,7 +90,7 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
                     Toggle::make('is_active')->default(true),
                     TextInput::make('source_url')
                         ->label('URL source')
-                        ->helperText('URL distante ou URL publique Laravel, par exemple /storage/maps/asie-sudest.geojson. Les templates Leaflet {z}/{x}/{y}{r} sont acceptés.')
+                        ->helperText('URL distante ou URL publique Laravel, par exemple /storage/maps/asie-sudest.geojson. Les modèles d’URL de tuiles {z}/{x}/{y}{r} sont acceptés.')
                         ->visible(fn(Get $get): bool => $get('source_type') === 'url')
                         ->live(onBlur: true)
                         ->columnSpanFull(),
@@ -130,7 +130,7 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
                         ->rows(10)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Style Leaflet appliqué par défaut à toutes les entités GeoJSON de la couche.')
+                        ->helperText('Style MapLibre appliqué par défaut à toutes les entités GeoJSON de la couche.')
                         ->live(onBlur: true),
                     Textarea::make('style_rules')
                         ->label('Règles JSON')
@@ -144,7 +144,7 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
                         ->rows(10)
                         ->formatStateUsing(fn($state): ?string => is_array($state) ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $state)
                         ->dehydrateStateUsing(fn($state): ?array => is_array($state) ? $state : (filled($state) ? json_decode($state, true) : null))
-                        ->helperText('Options techniques Leaflet. À laisser vide pour une simple coloration GeoJSON.')
+                        ->helperText('Options techniques du moteur de rendu (MapLibre). À laisser vide pour une simple coloration GeoJSON.')
                         ->live(onBlur: true),
                 ]),
             Section::make('Aperçu')
