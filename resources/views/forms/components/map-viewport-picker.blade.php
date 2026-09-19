@@ -48,9 +48,11 @@
                     Utiliser la vue actuelle
                 </x-filament::button>
 
-                <x-filament::button type="button" color="gray" size="xs" x-on:click="fitConfiguredBounds()">
-                    Revenir aux bounds
-                </x-filament::button>
+                @if ($shouldSyncBounds())
+                    <x-filament::button type="button" color="gray" size="xs" x-on:click="fitConfiguredBounds()">
+                        Revenir aux bounds
+                    </x-filament::button>
+                @endif
             @endif
 
             <span x-text="summary"></span>

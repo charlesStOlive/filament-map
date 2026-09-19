@@ -38,11 +38,20 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 const zoom = Number(this.getField(config.zoomPath) ?? config.mapPayload?.map?.zoom ?? config.defaults.zoom)
 
                 if (config.mapPayload) {
+                    // Un sélecteur de vue reprend le zoom déjà saisi dans le
+                    // formulaire (ex. celui propre à un voyage) plutôt que
+                    // celui de la scène.
+                    const fieldZoom = config.type === 'viewport' ? this.getField(config.zoomPath) : null
+                    const startZoom = fieldZoom !== null && fieldZoom !== undefined && fieldZoom !== '' && Number.isFinite(Number(fieldZoom))
+                        ? Number(fieldZoom)
+                        : config.mapPayload.map.zoom
+
                     const payload = {
                         ...config.mapPayload,
                         map: {
                             ...config.mapPayload.map,
                             center: { lat, lng },
+                            zoom: startZoom,
                         },
                         state: {
                             ...(config.mapPayload.state ?? {}),
