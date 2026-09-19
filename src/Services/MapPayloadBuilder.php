@@ -51,9 +51,12 @@ class MapPayloadBuilder
 
     protected function scene(MapScene $scene): array
     {
-        $minZoom = $scene->min_zoom ?? config('filament-map.default.min_zoom');
-        $maxZoom = $scene->max_zoom ?? config('filament-map.default.max_zoom');
-        $zoom = $scene->zoom ?? config('filament-map.default.zoom');
+        // Le cast `decimal:2` du modèle renvoie des chaînes ("18.00") : il faut
+        // des nombres dans le payload, sinon le JS les compare comme du texte
+        // ("18.00" < "2.00") et MapLibre refuse minZoom > maxZoom.
+        $minZoom = (float) ($scene->min_zoom ?? config('filament-map.default.min_zoom'));
+        $maxZoom = (float) ($scene->max_zoom ?? config('filament-map.default.max_zoom'));
+        $zoom = (float) ($scene->zoom ?? config('filament-map.default.zoom'));
 
         return [
             'id' => $scene->getKey(),

@@ -66,6 +66,19 @@ export class MapLibreMapInstance {
         return DEFAULT_STYLE
     }
 
+    // Les surcharges saisies dans un formulaire arrivent parfois en chaînes
+    // ("2.00") : MapLibre les compare telles quelles et lève sinon
+    // "maxZoom must be greater than or equal to minZoom".
+    numberOrUndefined(value) {
+        if (value === null || value === undefined || value === '') {
+            return undefined
+        }
+
+        const number = Number(value)
+
+        return Number.isFinite(number) ? number : undefined
+    }
+
     mount() {
         const center = this.payload.map.center
 
@@ -73,9 +86,9 @@ export class MapLibreMapInstance {
             container: this.element,
             style: this.initialStyle(),
             center: [center.lng, center.lat],
-            zoom: this.payload.map.zoom,
-            minZoom: this.payload.map.minZoom ?? undefined,
-            maxZoom: this.payload.map.maxZoom ?? undefined,
+            zoom: this.numberOrUndefined(this.payload.map.zoom),
+            minZoom: this.numberOrUndefined(this.payload.map.minZoom),
+            maxZoom: this.numberOrUndefined(this.payload.map.maxZoom),
             attributionControl: false,
             ...(this.payload.map.options ?? {}),
         })
