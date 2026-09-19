@@ -7,7 +7,9 @@ use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Field;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Js;
 
 class MapViewportPicker extends Field
 {
@@ -173,27 +175,49 @@ class MapViewportPicker extends Field
      * Bouton à poser en `->suffixAction()` d'un champ de zoom : récupère le
      * zoom actuel de la vue interactive la plus proche (même section) et le
      * pose dans le champ ciblé, sans aller-retour serveur pour lire la carte.
+     *
+     * Le champ ciblé est retrouvé via `$component` (le champ qui porte cette
+     * action) plutôt que par son seul nom : un `Set` non absolu se résout
+     * relativement au conteneur de ce même champ, ce qui échoue silencieusement
+     * dès que le champ vit dans le mini-formulaire d'une autre Action (une
+     * modale imbriquée, par exemple) plutôt qu'à la racine du formulaire.
      */
     public static function captureZoomAction(string $targetField, string $label = 'Utiliser le zoom actuel'): Action
     {
         $actionName = 'capture-zoom-'.$targetField;
-        $script = <<<JS
-            const root = \$el.closest('.fi-section, .fi-modal-window, form');
-            const mapEl = root?.querySelector('[id^="filament-map-viewport-picker-"]');
-            const zoom = mapEl ? window.FilamentMap?.instances?.get(mapEl.id)?.map?.getZoom() : null;
-            if (typeof zoom === 'number') { \$wire.mountAction('{$actionName}', { zoom: Math.round(zoom) }); }
-            JS;
 
-        return Action::make($actionName)
+        $action = Action::make($actionName)
             ->label($label)
             ->tooltip($label)
             ->icon('heroicon-o-viewfinder-circle')
             ->livewireClickHandlerEnabled(false)
-            ->extraAttributes(['x-on:click' => $script])
-            ->action(function (array $arguments, Set $set) use ($targetField): void {
-                if (array_key_exists('zoom', $arguments)) {
-                    $set($targetField, $arguments['zoom']);
+            ->action(function (array $arguments, Set $set, ?Component $component): void {
+                if (! array_key_exists('zoom', $arguments) || ! $component) {
+                    return;
                 }
+
+                $set($component->getStatePath(), $arguments['zoom'], isAbsolute: true);
             });
+
+        // Le bouton court-circuite le handler de clic Livewire par défaut pour
+        // lire le zoom courant de la carte côté client avant de monter
+        // l'action ; il doit donc reconstituer lui-même le `context` (dont
+        // `schemaComponent`) que Filament ajoute normalement tout seul,
+        // sinon l'action est introuvable dès qu'elle vit dans le
+        // mini-formulaire d'une autre Action (ex. une modale imbriquée).
+        $action->extraAttributes(function () use ($action, $actionName): array {
+            $context = Js::from($action->getContext());
+
+            $script = <<<JS
+                const root = \$el.closest('.fi-section, .fi-modal-window, form');
+                const mapEl = root?.querySelector('[id^="filament-map-viewport-picker-"]');
+                const zoom = mapEl ? window.FilamentMap?.instances?.get(mapEl.id)?.map?.getZoom() : null;
+                if (typeof zoom === 'number') { \$wire.mountAction('{$actionName}', { zoom: Math.round(zoom * 100) / 100 }, {$context}); }
+                JS;
+
+            return ['x-on:click' => $script];
+        });
+
+        return $action;
     }
 }

@@ -18,7 +18,7 @@ class MapScene extends Model
     {
         return [
             'center_latitude' => 'decimal:7', 'center_longitude' => 'decimal:7',
-            'zoom' => 'integer', 'min_zoom' => 'integer', 'max_zoom' => 'integer',
+            'zoom' => 'decimal:2', 'min_zoom' => 'decimal:2', 'max_zoom' => 'decimal:2',
             'bounds' => 'array', 'options' => 'array', 'is_active' => 'boolean',
         ];
     }
