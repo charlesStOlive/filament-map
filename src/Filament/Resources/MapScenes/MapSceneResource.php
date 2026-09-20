@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\MapScenes;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
-use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapViewportPicker;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\CoordinatesInput;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\CreateMapScene;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\EditMapScene;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\ListMapScenes;
@@ -85,15 +85,11 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
             ]),
             Section::make('Cadrage initial')
                 ->columns(3)->schema([
-                    TextInput::make('center_latitude')->label('Latitude')->numeric()->minValue(-90)->maxValue(90)->live(onBlur: true),
-                    TextInput::make('center_longitude')->label('Longitude')->numeric()->minValue(-180)->maxValue(180)->live(onBlur: true),
-                    // Pas de bouton "capturer le zoom" ici : le champ zoom se
-                    // met déjà à jour tout seul quand on déplace la vue
-                    // interactive (mode viewport de MapViewportPicker).
-                    TextInput::make('zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22)->live(onBlur: true),
-                    TextInput::make('min_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
-                    TextInput::make('max_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
-                    MapViewportPicker::make('viewport')->dehydrated(false)->syncBounds(false)
+                    // Centre et zoom suivent la vue interactive : le composant
+                    // porte la carte en mode viewport, le zoom reste un champ frère.
+                    CoordinatesInput::make()
+                        ->latitudeField('center_latitude')->longitudeField('center_longitude')
+                        ->viewport('zoom')->live(onBlur: true)
                         ->scene(fn (?MapScene $record, callable $get): MapScene => $record ?? new MapScene([
                             'center_latitude' => $get('center_latitude'),
                             'center_longitude' => $get('center_longitude'),
@@ -102,8 +98,13 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
                             'max_zoom' => $get('max_zoom'),
                             'mode' => $get('mode'),
                             'is_active' => true,
-                        ]))
-                        ->columnSpanFull(),
+                        ])),
+                    // Pas de bouton "capturer le zoom" ici : le champ zoom se
+                    // met déjà à jour tout seul quand on déplace la vue
+                    // interactive (mode viewport de MapViewportPicker).
+                    TextInput::make('zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22)->live(onBlur: true),
+                    TextInput::make('min_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
+                    TextInput::make('max_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
                 ]),
             Section::make('Aperçu enregistré')->schema([
                 LivewireComponent::make(MapViewer::class, fn (?MapScene $record) => ['scene' => $record, 'showRefresh' => true])

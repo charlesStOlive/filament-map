@@ -55,6 +55,39 @@ En mode scène, fournir ou remplacer des couches externes est refusé. Les ancie
 
 Voir [les scènes cartographiques](docs/knowledge-base/map/scenes.md).
 
+## Saisir une position : `CoordinatesInput`
+
+Un seul composant de formulaire pour une paire latitude / longitude, sur une
+seule ligne : deux champs numériques bornés (−90…90, −180…180) fusionnés sous un
+libellé, la règle « les deux ou aucune » (`required()` les exige tous les
+deux), et un unique bouton icône (carte + repère, libellé en infobulle) qui
+ouvre la carte dans un popup. Cliquer sur la carte ou déplacer le repère met le
+formulaire à jour en direct ; « Terminé » referme le popup.
+
+Selon le nom donné à `make()`, la position se stocke dans un JSON ou dans deux
+colonnes SQL :
+
+```php
+// Deux colonnes SQL (frères du composant) : `latitude` / `longitude` par défaut…
+CoordinatesInput::make()->required();
+// … ou nommées à la demande.
+CoordinatesInput::make()->latitudeField('center_latitude')->longitudeField('center_longitude');
+
+// Un JSON : l'état est ['latitude' => …, 'longitude' => …] sous la clé `position`
+// (colonne castée en array, ou clé d'un tableau JSON).
+CoordinatesInput::make('position');
+```
+
+Options : `->label()` / `->hiddenLabel()` (« Coordonnées » par défaut),
+`->scene($scene)` (couches de la carte ; sans scène connue, ni bouton ni
+carte), `->viewport('zoom')` (le centre **et** le zoom suivent la carte, le
+champ de zoom reste un champ frère), `->initialZoom()`, `->mapHeight()`,
+`->withoutMap()` (saisie seule), `->live(onBlur: true)`.
+
+Il remplace l'ancien `CoordinatePicker` (dont le bouton n'était écouté par
+personne). `MapViewportPicker` reste disponible seul, et porte toujours
+`captureZoomAction()` pour les champs de zoom.
+
 ## Viewer Livewire
 
 ```blade
