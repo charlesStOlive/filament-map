@@ -97,6 +97,7 @@ personne). `MapViewportPicker` reste disponible seul, et porte toujours
 Le viewer publie notamment :
 
 - `filament-map:point-clicked` ;
+- `filament-map:point-hovered` ;
 - `filament-map:feature-clicked` ;
 - `filament-map:coordinates-picked`.
 

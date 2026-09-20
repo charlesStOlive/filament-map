@@ -225,6 +225,7 @@ export class MapLibreMapInstance {
         const markerLayer = addMarkerLayer(this.map, this.payload.points ?? [], {
             selectedPointId: this.payload.state?.selectedPointId,
             onPointClick: (point) => this.pointClicked(point),
+            onPointHover: (point, hovering) => this.pointHovered(point, hovering),
         })
 
         if (markerLayer) {
@@ -378,6 +379,13 @@ export class MapLibreMapInstance {
             detail,
         }))
         window.Livewire?.dispatch?.('filament-map-point-clicked', detail)
+    }
+
+    /** Le pointeur entre sur un point ou en sort : de quoi éclairer, ailleurs dans la page, ce qui le concerne. */
+    pointHovered(point, hovering) {
+        window.dispatchEvent(new CustomEvent('filament-map:point-hovered', {
+            detail: this.eventDetail({ point, hovering }),
+        }))
     }
 
     eventDetail(detail = {}) {

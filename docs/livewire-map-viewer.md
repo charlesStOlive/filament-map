@@ -150,6 +150,8 @@ Un clic sur un marqueur émet :
 - l'événement navigateur `filament-map:point-clicked` ;
 - l'événement Livewire `filament-map-point-clicked`.
 
+Le survol d'un marqueur émet l'événement navigateur `filament-map:point-hovered` (`detail.point`, `detail.hovering` : `true` à l'entrée, `false` à la sortie), pour éclairer ailleurs dans la page ce qui concerne le point. Il n'existe pas en version Livewire.
+
 Un clic sur la carte émet :
 
 - l'événement navigateur `filament-map:coordinates-picked` ;

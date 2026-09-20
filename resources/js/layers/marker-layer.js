@@ -31,6 +31,8 @@ export function addMarkerLayer(map, points, context = {}) {
         }
 
         marker.getElement().addEventListener('click', () => context.onPointClick?.(point))
+        marker.getElement().addEventListener('mouseenter', () => context.onPointHover?.(point, true))
+        marker.getElement().addEventListener('mouseleave', () => context.onPointHover?.(point, false))
         markers.set(String(point.id), marker)
     }
 
