@@ -14,7 +14,7 @@
     :x-on:click="'$dispatch(\'open-modal\', { id: \'' . $modalId . '\' })'"
 />
 
-<x-filament::modal :id="$modalId" width="4xl" teleport="body">
+<x-filament::modal :id="$modalId" width="7xl" teleport="body">
     <x-slot name="heading">Choisir sur la carte</x-slot>
 
     {{ $getChildSchema() }}

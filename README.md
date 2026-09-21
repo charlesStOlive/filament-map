@@ -61,8 +61,14 @@ Un seul composant de formulaire pour une paire latitude / longitude, sur une
 seule ligne : deux champs numériques bornés (−90…90, −180…180) fusionnés sous un
 libellé, la règle « les deux ou aucune » (`required()` les exige tous les
 deux), et un unique bouton icône (carte + repère, libellé en infobulle) qui
-ouvre la carte dans un popup. Cliquer sur la carte ou déplacer le repère met le
-formulaire à jour en direct ; « Terminé » referme le popup.
+ouvre la carte dans un grand popup (7xl, la carte prend les deux tiers de la
+hauteur de l'écran ; un bouton la passe en **plein écran**, Échap en sort).
+Cliquer sur la carte ou déplacer le repère met le formulaire à jour en direct ;
+« Terminé » referme le popup.
+
+Au-dessus de la carte, un champ **cherche un lieu ou une adresse** (« Siem Reap »,
+« 12 rue de la Paix, Paris ») : les résultats se listent, un clic cale la carte
+dessus et pose le repère. Voir « Recherche d'adresse » plus bas.
 
 Selon le nom donné à `make()`, la position se stocke dans un JSON ou dans deux
 colonnes SQL :
@@ -82,11 +88,42 @@ Options : `->label()` / `->hiddenLabel()` (« Coordonnées » par défaut),
 `->scene($scene)` (couches de la carte ; sans scène connue, ni bouton ni
 carte), `->viewport('zoom')` (le centre **et** le zoom suivent la carte, le
 champ de zoom reste un champ frère), `->initialZoom()`, `->mapHeight()`,
-`->withoutMap()` (saisie seule), `->live(onBlur: true)`.
+`->withoutMap()` (saisie seule), `->live(onBlur: true)`. `MapViewportPicker`
+prend `->withoutSearch()` pour retirer la recherche d'adresse.
 
 Il remplace l'ancien `CoordinatePicker` (dont le bouton n'était écouté par
 personne). `MapViewportPicker` reste disponible seul, et porte toujours
 `captureZoomAction()` pour les champs de zoom.
+
+### Recherche d'adresse
+
+`MapViewportPicker` (donc `CoordinatesInput`) interroge un **service de
+géocodage** par le serveur : la méthode `searchAddress()` du champ, appelée depuis
+la carte avec `$wire.callSchemaComponentMethod()` (aucune route à déclarer, les
+droits sont ceux de la page). Le pilote par défaut est **Nominatim**
+(OpenStreetMap) : gratuit, sans clé, mais fait pour un usage occasionnel — une
+requête par seconde au plus, un User-Agent qui identifie l'application, pas de
+recherche à chaque frappe (la recherche se lance au bouton ou à Entrée), et les
+réponses gardées. `NominatimGeocoder` le respecte : limite d'une requête par
+seconde pour toute l'application, User-Agent « nom de l'app (URL) », réponses en
+cache 30 jours. Conditions : <https://operations.osmfoundation.org/policies/nominatim/>.
+
+Les réglages sont sous la clé `geocoding` de `config/filament-map.php` (variables
+`FILAMENT_MAP_GEOCODING_URL`, `_USER_AGENT`, `_EMAIL`, `_COUNTRIES`) :
+`enabled`, `driver`, `url` (pour une instance auto-hébergée), `email`,
+`language` (par défaut la langue de l'application, puis l'anglais : sans nom dans
+la première, Nominatim retombe sur l'écriture locale), `country_codes`, `timeout`
+et `cache_seconds`.
+
+Pour un autre service (Photon, MapTiler, Geoapify, l'API adresse du
+gouvernement…), on écrit une classe qui implémente
+`Services\Geocoding\Geocoder` — `search(string $query, int $limit): array` de
+`GeocodingResult`, `GeocodingException` pour un message à l'utilisateur — et on
+la nomme dans `geocoding.driver`.
+
+Le JavaScript du sélecteur est copié dans `public/vendor/filament-map` :
+après une mise à jour du paquet,
+`php artisan vendor:publish --tag=filament-map-assets --force`.
 
 ## Viewer Livewire
 

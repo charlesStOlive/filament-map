@@ -20,7 +20,30 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         resizeObserver: null,
         hasFittedVisibleContent: false,
 
+        // Recherche d'adresse et plein écran.
+        query: '',
+        results: [],
+        searching: false,
+        searched: false,
+        message: '',
+        fullscreen: false,
+        fullscreenHandler: null,
+        closeModalHandler: null,
+
         init() {
+            this.fullscreenHandler = () => {
+                this.fullscreen = document.fullscreenElement !== null && document.fullscreenElement.contains(this.$root)
+            }
+            document.addEventListener('fullscreenchange', this.fullscreenHandler)
+
+            // Fermer le popup (« Terminé », la croix) pendant qu'il est en plein écran : on en sort, sans quoi l'écran resterait noir.
+            this.closeModalHandler = () => {
+                if (document.fullscreenElement?.contains(this.$root)) {
+                    document.exitFullscreen()
+                }
+            }
+            window.addEventListener('close-modal', this.closeModalHandler)
+
             const boot = () => {
                 const element = document.getElementById(config.id)
 
@@ -121,6 +144,14 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         destroy() {
             this.resizeObserver?.disconnect()
 
+            if (this.fullscreenHandler) {
+                document.removeEventListener('fullscreenchange', this.fullscreenHandler)
+            }
+
+            if (this.closeModalHandler) {
+                window.removeEventListener('close-modal', this.closeModalHandler)
+            }
+
             if (this.coordinatesPickedHandler) {
                 window.removeEventListener('filament-map:coordinates-picked', this.coordinatesPickedHandler)
             }
@@ -148,6 +179,69 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 }
             })
             this.resizeObserver.observe(element)
+        },
+
+        /**
+         * Plein écran : la fenêtre du popup qui contient le sélecteur, sinon le sélecteur lui-même. C'est le plein écran du
+         * navigateur (Échap en sort) ; la carte se redimensionne d'elle-même (voir observeSize).
+         */
+        toggleFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen()
+
+                return
+            }
+
+            const target = this.$root.closest('.fi-modal-window') ?? this.$root
+
+            target.requestFullscreen?.().catch(() => {})
+        },
+
+        /**
+         * Cherche un lieu (le serveur interroge le service d'adresses : voir MapViewportPicker::searchAddress). Une recherche à
+         * la demande — bouton ou Entrée —, jamais à chaque frappe : le service public l'interdit.
+         */
+        async search() {
+            const query = this.query.trim()
+
+            if (!config.search || query.length < 3 || this.searching) {
+                return
+            }
+
+            this.searching = true
+            this.searched = true
+            this.results = []
+            this.message = 'Recherche…'
+
+            try {
+                const response = await this.$wire.callSchemaComponentMethod(config.componentKey, 'searchAddress', { query })
+
+                this.results = response?.results ?? []
+                this.message = response?.error ?? (this.results.length === 0 ? 'Aucun lieu trouvé.' : '')
+            } catch (error) {
+                this.message = 'La recherche a échoué. Réessayez.'
+            } finally {
+                this.searching = false
+            }
+        },
+
+        /** Va au lieu choisi : la carte s'y cale (sur son cadre quand on le connaît), et le repère s'y pose. */
+        pick(result) {
+            const bounds = result.bounds
+
+            if (bounds) {
+                this.map.fitBounds([[bounds.west, bounds.south], [bounds.east, bounds.north]], { padding: 40, maxZoom: 17, duration: 600 })
+            } else {
+                this.map.flyTo({ center: [result.lng, result.lat], zoom: 14, duration: 600 })
+            }
+
+            if (config.type === 'coordinate') {
+                this.selectCoordinates(result.lat, result.lng)
+            }
+
+            this.results = []
+            this.searched = false
+            this.message = ''
         },
 
         getField(path) {

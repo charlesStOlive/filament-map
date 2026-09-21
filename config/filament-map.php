@@ -34,6 +34,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recherche d'adresse
+    |--------------------------------------------------------------------------
+    |
+    | Le sélecteur de carte propose de chercher un lieu par son nom ou son
+    | adresse. Le pilote par défaut est Nominatim (OpenStreetMap) : gratuit et
+    | sans clé, mais limité à une requête par seconde et à un usage occasionnel
+    | (https://operations.osmfoundation.org/policies/nominatim/). Pour un autre
+    | service, `driver` peut être le nom d'une classe qui implémente
+    | CharlesStOlive\FilamentMap\Services\Geocoding\Geocoder.
+    |
+    */
+    'geocoding' => [
+        'enabled' => true,
+        'driver' => 'nominatim',
+        'url' => env('FILAMENT_MAP_GEOCODING_URL', 'https://nominatim.openstreetmap.org/search'),
+        // Identifie l'application auprès du service (exigé par Nominatim). Par défaut : « nom de l'app (URL) ».
+        'user_agent' => env('FILAMENT_MAP_GEOCODING_USER_AGENT'),
+        // Un courriel de contact, que Nominatim préfère à un User-Agent seul en cas d'abus.
+        'email' => env('FILAMENT_MAP_GEOCODING_EMAIL'),
+        // Langues des noms de lieux, par ordre de préférence (« fr,en »). Par défaut : celle de l'application, puis l'anglais.
+        'language' => null,
+        // Limiter la recherche à des pays (codes ISO séparés par des virgules, « fr,kh »), ou null pour le monde entier.
+        'country_codes' => env('FILAMENT_MAP_GEOCODING_COUNTRIES'),
+        'timeout' => 6,
+        // Durée de garde d'une réponse (30 jours) ; 0 pour ne rien garder.
+        'cache_seconds' => 60 * 60 * 24 * 30,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default map options
     |--------------------------------------------------------------------------
     */

@@ -44,7 +44,8 @@ class CoordinatesInput extends Component
 
     protected bool $hasMap = true;
 
-    protected string $mapHeight = 'h-[420px]';
+    // Le popup est large : la carte prend l'essentiel de la hauteur de l'écran (et tout l'écran en plein écran).
+    protected string $mapHeight = 'h-[65vh]';
 
     protected MapScene | int | string | Closure | null $scene = null;
 

@@ -3,13 +3,17 @@
 namespace CharlesStOlive\FilamentMap\Filament\Forms\Components;
 
 use CharlesStOlive\FilamentMap\Models\MapScene;
+use CharlesStOlive\FilamentMap\Services\Geocoding\Geocoder;
+use CharlesStOlive\FilamentMap\Services\Geocoding\GeocodingException;
 use CharlesStOlive\FilamentMap\Services\MapPayloadBuilder;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Illuminate\Support\Js;
+use Livewire\Attributes\Renderless;
 
 class MapViewportPicker extends Field
 {
@@ -56,6 +60,8 @@ class MapViewportPicker extends Field
     protected string $height = 'h-[420px]';
 
     protected bool $syncBounds = true;
+
+    protected bool $hasSearch = true;
 
     public function type(string $type): static
     {
@@ -109,6 +115,44 @@ class MapViewportPicker extends Field
         $this->syncBounds = $condition;
 
         return $this;
+    }
+
+    /** Sans la recherche d'adresse (elle est proposée par défaut, tant que `filament-map.geocoding.enabled` le permet). */
+    public function withoutSearch(bool $condition = true): static
+    {
+        $this->hasSearch = ! $condition;
+
+        return $this;
+    }
+
+    public function hasSearch(): bool
+    {
+        return $this->hasSearch && (bool) config('filament-map.geocoding.enabled', true);
+    }
+
+    /**
+     * Cherche un lieu par son nom ou son adresse (voir Services\Geocoding). Appelée par la carte, depuis le navigateur
+     * (`$wire.callSchemaComponentMethod`), sans rafraîchir le formulaire.
+     *
+     * @return array{results: array<int, array{label: string, lat: float, lng: float, bounds: array<string, float>|null}>, error?: string}
+     */
+    #[ExposedLivewireMethod]
+    #[Renderless]
+    public function searchAddress(string $query): array
+    {
+        $query = trim($query);
+
+        if (! $this->hasSearch() || mb_strlen($query) < 3) {
+            return ['results' => []];
+        }
+
+        try {
+            $results = app(Geocoder::class)->search(mb_substr($query, 0, 200));
+        } catch (GeocodingException $exception) {
+            return ['results' => [], 'error' => $exception->getMessage()];
+        }
+
+        return ['results' => array_map(static fn ($result): array => $result->toArray(), $results)];
     }
 
     public function getLatitudeField(): string

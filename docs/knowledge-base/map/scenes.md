@@ -43,7 +43,7 @@ Une couche masquée à l'ouverture fait toujours partie de la scène : une inter
 - **Latitude du centre** et **longitude du centre** : point placé au centre à l'ouverture.
 - **Zoom** : niveau initial (accepte deux décimales, par exemple `9.33`). Une valeur faible montre une grande zone ; une valeur élevée montre davantage de détails.
 - **Zoom minimum** et **zoom maximum** : limitent respectivement le recul et le rapprochement autorisés (également en décimal).
-- **Sélecteur de vue** : permet de déplacer et zoomer directement sur la scène. Les valeurs numériques et les limites de zoom se mettent à jour toutes seules pendant qu'on déplace la vue — il n'y a pas de bouton « capturer le zoom » séparé ici.
+- **Sélecteur de vue** : permet de déplacer et zoomer directement sur la scène. Le champ de recherche de la carte (un lieu, une adresse) la recentre sur le résultat choisi. Les valeurs numériques et les limites de zoom se mettent à jour toutes seules pendant qu'on déplace la vue — il n'y a pas de bouton « capturer le zoom » séparé ici.
 - **Bounds** : rectangle géographique décrivant la zone visible ou autorisée (réglages avancés).
 
 Pour éviter une scène vide à l'ouverture, utilisez le sélecteur de vue après avoir ajouté les premières couches.

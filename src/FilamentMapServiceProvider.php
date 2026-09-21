@@ -4,6 +4,8 @@ namespace CharlesStOlive\FilamentMap;
 
 use CharlesStOlive\FilamentMap\Commands\InstallFilamentMapCommand;
 use CharlesStOlive\FilamentMap\Livewire\MapViewer;
+use CharlesStOlive\FilamentMap\Services\Geocoding\Geocoder;
+use CharlesStOlive\FilamentMap\Services\Geocoding\NominatimGeocoder;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -20,6 +22,15 @@ class FilamentMapServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 InstallFilamentMapCommand::class,
             ]);
+    }
+
+    public function packageRegistered(): void
+    {
+        $this->app->bind(Geocoder::class, function ($app): Geocoder {
+            $driver = config('filament-map.geocoding.driver', 'nominatim');
+
+            return $app->make($driver === 'nominatim' ? NominatimGeocoder::class : $driver);
+        });
     }
 
     public function packageBooted(): void
