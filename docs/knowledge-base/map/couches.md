@@ -37,6 +37,8 @@ https://serveur.example/{z}/{x}/{y}.png
 
 Vérifiez que le serveur autorise l'accès depuis le navigateur et que l'URL utilise HTTPS sur un site HTTPS.
 
+Si le fournisseur demande une clé (MapTiler, par exemple), ne l'écrivez pas dans la couche : mettez-la dans le fichier `.env` de l'application (`MAPTILER_API_KEY=…`) et citez-la dans l'URL par `{key:maptiler}` — par exemple `https://api.maptiler.com/maps/<identifiant>/style.json?key={key:maptiler}`. Elle est remplacée à l'affichage. Un fond décrit par un style (`style.json`) se déclare avec l'option `style_url`, comme la couche TileCat.
+
 ### JSON
 
 Les données sont collées directement dans le formulaire. Ce choix est pratique pour une petite couche stable ou un essai. Pour un volume important ou fréquemment mis à jour, préférez un fichier ou une URL.

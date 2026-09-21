@@ -91,9 +91,9 @@ class CoordinatesInput extends Component
     }
 
     /**
-     * Fait de la carte un sélecteur de vue : le centre et le zoom de la
-     * carte suivent alors les champs (le champ de zoom reste au frère de
-     * ce composant, il n'en fait pas partie).
+     * Fait de la carte un sélecteur de cadrage : la position est celle du repère (posé au clic sur la carte, ou déplacé),
+     * et le zoom celui que la carte affiche, arrondi (le champ de zoom reste au frère de ce composant, il n'en fait pas
+     * partie). Déplacer la carte ne change pas la position : le bouton « Centrer sur le repère » y ramène la vue.
      */
     public function viewport(string $zoomField): static
     {
@@ -240,6 +240,6 @@ class CoordinatesInput extends Component
 
         return $this->zoomField === null
             ? $picker->coordinate()
-            : $picker->type(MapViewportPicker::TYPE_VIEWPORT)->zoomField($this->zoomField)->syncBounds(false);
+            : $picker->markerAndZoom()->zoomField($this->zoomField);
     }
 }

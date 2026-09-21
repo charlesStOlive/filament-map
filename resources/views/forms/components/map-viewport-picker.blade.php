@@ -153,6 +153,10 @@
                         Revenir aux bounds
                     </x-filament::button>
                 @endif
+            @else
+                <x-filament::button type="button" color="gray" size="xs" icon="heroicon-m-viewfinder-circle" x-on:click="centerOnMarker()">
+                    Centrer sur le repère
+                </x-filament::button>
             @endif
 
             <span x-text="summary"></span>

@@ -21,6 +21,12 @@ class MapViewportPicker extends Field
 
     public const TYPE_VIEWPORT = 'viewport';
 
+    /**
+     * Un repère posé au clic (ou déplacé) et le zoom courant de la carte : la carte se déplace librement sans toucher au
+     * repère, seul le zoom suit. C'est le cadrage d'une vue de départ : « centrée sur ce point, à ce zoom ».
+     */
+    public const TYPE_MARKER_ZOOM = 'marker-zoom';
+
     protected string $view = 'filament-map::forms.components.map-viewport-picker';
 
     protected MapScene|int|string|Closure|null $scene = null;
@@ -68,6 +74,11 @@ class MapViewportPicker extends Field
         $this->type = $type;
 
         return $this;
+    }
+
+    public function markerAndZoom(): static
+    {
+        return $this->type(self::TYPE_MARKER_ZOOM)->syncBounds(false);
     }
 
     public function coordinate(): static

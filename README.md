@@ -86,14 +86,25 @@ CoordinatesInput::make('position');
 
 Options : `->label()` / `->hiddenLabel()` (« Coordonnées » par défaut),
 `->scene($scene)` (couches de la carte ; sans scène connue, ni bouton ni
-carte), `->viewport('zoom')` (le centre **et** le zoom suivent la carte, le
-champ de zoom reste un champ frère), `->initialZoom()`, `->mapHeight()`,
+carte), `->viewport('zoom')` (cadrage d'une vue de départ : la position est
+celle du **repère**, posé au clic ou déplacé, et le zoom est celui que la carte
+affiche, arrondi au centième ; déplacer la carte ne change pas la position, le
+bouton « Centrer sur le repère » y ramène la vue ; le champ de zoom reste un
+champ frère), `->initialZoom()`, `->mapHeight()`,
 `->withoutMap()` (saisie seule), `->live(onBlur: true)`. `MapViewportPicker`
 prend `->withoutSearch()` pour retirer la recherche d'adresse.
 
 Il remplace l'ancien `CoordinatePicker` (dont le bouton n'était écouté par
 personne). `MapViewportPicker` reste disponible seul, et porte toujours
 `captureZoomAction()` pour les champs de zoom.
+
+### Clés des fournisseurs de fonds de carte
+
+Une couche cite sa clé sans la porter : `{key:maptiler}` dans son URL (source ou
+`options.style_url`) est remplacé, à l'affichage, par `config('filament-map.keys.maptiler')`
+(variable `MAPTILER_API_KEY`). La clé vit dans le `.env`, pas en base, et un
+changement de clé ne demande pas de retoucher les couches. Pour un autre
+fournisseur, ajouter une entrée à `keys` suffit (`{key:autre}`).
 
 ### Recherche d'adresse
 

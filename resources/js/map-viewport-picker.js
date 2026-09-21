@@ -30,6 +30,9 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         fullscreenHandler: null,
         closeModalHandler: null,
 
+        // Dans le mode « repère + zoom », le zoom n'est enregistré qu'une fois la carte posée : ses premiers réglages ne comptent pas.
+        settled: false,
+
         init() {
             this.fullscreenHandler = () => {
                 this.fullscreen = document.fullscreenElement !== null && document.fullscreenElement.contains(this.$root)
@@ -64,7 +67,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                     // Un sélecteur de vue reprend le zoom déjà saisi dans le
                     // formulaire (ex. celui propre à un voyage) plutôt que
                     // celui de la scène.
-                    const fieldZoom = config.type === 'viewport' ? this.getField(config.zoomPath) : null
+                    const fieldZoom = config.type !== 'coordinate' ? this.getField(config.zoomPath) : null
                     const startZoom = fieldZoom !== null && fieldZoom !== undefined && fieldZoom !== '' && Number.isFinite(Number(fieldZoom))
                         ? Number(fieldZoom)
                         : config.mapPayload.map.zoom
@@ -119,6 +122,11 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 if (config.type === 'viewport') {
                     this.map.on('moveend', () => this.syncFromMap())
                     this.map.on('zoomend', () => this.syncFromMap())
+                } else if (config.type === 'marker-zoom') {
+                    // La position est celle du repère : déplacer la carte n'y touche pas. Seul le zoom affiché est enregistré.
+                    this.map.once('idle', () => { this.settled = true })
+                    this.map.on('moveend', () => this.syncSummary())
+                    this.map.on('zoomend', () => this.syncZoom())
                 } else {
                     this.map.on('moveend', () => this.syncSummary())
                     this.map.on('zoomend', () => this.syncSummary())
@@ -235,7 +243,8 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 this.map.flyTo({ center: [result.lng, result.lat], zoom: 14, duration: 600 })
             }
 
-            if (config.type === 'coordinate') {
+            // Le repère se pose sur le lieu (sauf pour une vue à cadrer par son seul centre, où la carte suit).
+            if (config.type !== 'viewport') {
                 this.selectCoordinates(result.lat, result.lng)
             }
 
@@ -250,6 +259,24 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
 
         setField(path, value) {
             this.$wire.set(path, value, false)
+        },
+
+        /** Le zoom de la carte, arrondi au centième : un zoom fractionnaire à 15 décimales n'a aucun sens (et échoue à la validation). */
+        roundZoom(zoom) {
+            return Math.round(Number(zoom) * 100) / 100
+        },
+
+        syncZoom() {
+            if (this.settled) {
+                this.setField(config.zoomPath, this.roundZoom(this.map.getZoom()))
+            }
+
+            this.syncSummary()
+        },
+
+        /** Ramène la vue sur le repère (la carte a pu être déplacée pour regarder ailleurs). */
+        centerOnMarker() {
+            this.map.easeTo({ center: this.marker.getLngLat(), duration: 400 })
         },
 
         syncFromMarker() {
@@ -296,7 +323,7 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
                 this.setField(config.longitudePath, coordinates.lng)
             }
 
-            this.setField(config.zoomPath, this.map.getZoom())
+            this.setField(config.zoomPath, this.roundZoom(this.map.getZoom()))
 
             if (config.syncBounds) {
                 const bounds = this.map.getBounds()
@@ -350,6 +377,12 @@ window.filamentMapViewportPicker = function filamentMapViewportPicker(config) {
         syncSummary() {
             if (!this.map) {
                 this.summary = ''
+                return
+            }
+
+            if (config.type === 'marker-zoom' && this.marker) {
+                const position = this.marker.getLngLat()
+                this.summary = `Repère ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)} - zoom ${this.roundZoom(this.map.getZoom()).toFixed(2)} (le carnet s'ouvre centré sur le repère, à ce zoom)`
                 return
             }
 

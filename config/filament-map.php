@@ -34,6 +34,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Clés des fournisseurs de fonds de carte
+    |--------------------------------------------------------------------------
+    |
+    | Une couche peut citer une clé sans l'écrire en base : « {key:maptiler} »
+    | dans son URL (source ou `style_url`) est remplacé, à l'affichage, par la
+    | valeur ci-dessous. La clé vit dans le .env, et un changement de clé ne
+    | demande pas de retoucher les couches.
+    |
+    */
+    'keys' => [
+        'maptiler' => env('MAPTILER_API_KEY'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Recherche d'adresse
     |--------------------------------------------------------------------------
     |

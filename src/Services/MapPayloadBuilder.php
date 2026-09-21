@@ -85,12 +85,34 @@ class MapPayloadBuilder
             'key' => $layer->key,
             'type' => $layer->type,
             'visible' => (bool) ($pivot?->is_visible_by_default ?? true),
-            'source' => $this->layerSource($layer),
+            'source' => $this->resolveKeys($this->layerSource($layer)),
             'style' => array_replace_recursive($layer->style ?? [], $this->pivotJson($pivot?->style)),
             'styleRules' => array_replace_recursive($layer->style_rules ?? [], $this->pivotJson($pivot?->style_rules)),
-            'options' => array_replace_recursive($layer->options ?? [], $this->pivotJson($pivot?->options)),
+            'options' => $this->resolveKeys(array_replace_recursive($layer->options ?? [], $this->pivotJson($pivot?->options))),
             'sortOrder' => $pivot?->sort_order ?? 0,
         ];
+    }
+
+    /**
+     * Remplace « {key:maptiler} » par la clé du fournisseur (`filament-map.keys`) dans toutes les chaînes de la couche : une
+     * couche cite sa clé sans la porter. Une clé inconnue laisse une chaîne vide, l'URL échoue alors chez le fournisseur.
+     *
+     * @param  array<mixed>  $value
+     * @return array<mixed>
+     */
+    protected function resolveKeys(array $value): array
+    {
+        array_walk_recursive($value, static function (mixed &$item): void {
+            if (is_string($item) && str_contains($item, '{key:')) {
+                $item = preg_replace_callback(
+                    '/\{key:([a-z0-9_-]+)\}/i',
+                    static fn (array $match): string => (string) config('filament-map.keys.'.strtolower($match[1]), ''),
+                    $item,
+                );
+            }
+        });
+
+        return $value;
     }
 
     protected function layerSource(MapLayer $layer): array
