@@ -28,6 +28,9 @@ use Filament\Schemas\Components\View;
  * Dans les deux cas `latitudeField()` / `longitudeField()` nomment les deux
  * valeurs : ce sont les clés du JSON ou les noms des colonnes.
  */
+/**
+ * @deprecated Utiliser MapPositionInput : un résumé dans la page, un popup avec Valider / Annuler, la recherche d'adresse et les réglages de zoom.
+ */
 class CoordinatesInput extends Component
 {
     use HasLabel;

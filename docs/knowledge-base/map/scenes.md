@@ -43,10 +43,10 @@ Une couche masquée à l'ouverture fait toujours partie de la scène : une inter
 - **Latitude du centre** et **longitude du centre** : point placé au centre à l'ouverture.
 - **Zoom** : niveau initial (accepte deux décimales, par exemple `9.33`). Une valeur faible montre une grande zone ; une valeur élevée montre davantage de détails.
 - **Zoom minimum** et **zoom maximum** : limitent respectivement le recul et le rapprochement autorisés (également en décimal).
-- **Sélecteur de cadrage** : ouvre une grande carte. **Cliquez** pour poser le repère (ou déplacez-le, ou cherchez un lieu ou une adresse : cliquer un résultat y pose le repère). La scène s'ouvrira **centrée sur le repère**, au **zoom que la carte affiche** (arrondi au centième). Vous pouvez déplacer la carte pour regarder ailleurs sans perdre la position du repère ; « Centrer sur le repère » y ramène la vue.
+- **Vue initiale** : un résumé (latitude, longitude, zoom, zoom minimum et maximum) et une icône pour le modifier. Elle ouvre un grand popup : **cliquez** sur la carte pour poser le repère (ou déplacez-le, saisissez des coordonnées, ou cherchez un lieu ou une adresse), puis reprenez le zoom de la carte avec le bouton de chaque champ de zoom. La scène s'ouvrira **centrée sur le repère**, au zoom choisi. Rien n'est enregistré avant **Valider** : la croix, Échap et **Annuler** abandonnent les changements.
 - **Bounds** : rectangle géographique décrivant la zone visible ou autorisée (réglages avancés).
 
-Pour éviter une scène vide à l'ouverture, utilisez le sélecteur de cadrage après avoir ajouté les premières couches.
+Pour éviter une scène vide à l'ouverture, utilisez la vue initiale après avoir ajouté les premières couches.
 
 ## Enregistrer puis contrôler
 

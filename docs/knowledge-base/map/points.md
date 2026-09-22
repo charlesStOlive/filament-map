@@ -22,7 +22,7 @@ Un point sans type reste utilisable, mais son apparence dépendra davantage des 
 
 - **Latitude** : position nord/sud, comprise entre `-90` et `90`.
 - **Longitude** : position est/ouest, comprise entre `-180` et `180`.
-- **Sélecteur de coordonnées** : ouvre une grande carte (avec un bouton plein écran) où l'on place le point visuellement ; les deux valeurs se synchronisent. Un champ de recherche au-dessus de la carte trouve un lieu ou une adresse : cliquez un résultat, la carte s'y cale et le repère s'y pose.
+- **Coordonnées** : un résumé (latitude, longitude) et une icône pour le modifier. Le popup ouvre une grande carte (avec un bouton plein écran) : cliquez pour placer le point, ou déplacez le repère, saisissez des coordonnées, ou cherchez un lieu ou une adresse. **Valider** reporte le choix dans le formulaire ; **Annuler**, la croix et Échap l'abandonnent.
 
 Dans la plupart des formulaires, la latitude est affichée avant la longitude. Dans un fichier GeoJSON, l'ordre est généralement longitude puis latitude. Cette différence est une cause fréquente de points placés au mauvais endroit.
 

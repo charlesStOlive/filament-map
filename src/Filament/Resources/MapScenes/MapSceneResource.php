@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\MapScenes;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
-use CharlesStOlive\FilamentMap\Filament\Forms\Components\CoordinatesInput;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapPositionInput;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\CreateMapScene;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\EditMapScene;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\ListMapScenes;
@@ -84,12 +84,15 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
                     ->addActionLabel('Utiliser une couche'),
             ]),
             Section::make('Cadrage initial')
-                ->columns(3)->schema([
-                    // Centre et zoom suivent la vue interactive : le composant
-                    // porte la carte en mode viewport, le zoom reste un champ frère.
-                    CoordinatesInput::make()
+                ->schema([
+                    // Le résumé s'affiche ici ; le formulaire (repère, coordonnées, adresse, zoom, zoom min et max) est dans le
+                    // popup, qui ne reporte rien avant « Valider ».
+                    MapPositionInput::make()
+                        ->label('Vue initiale')
                         ->latitudeField('center_latitude')->longitudeField('center_longitude')
-                        ->viewport('zoom')->live(onBlur: true)
+                        ->zoomField('zoom', 'Zoom')
+                        ->minZoomField('min_zoom', 'Zoom minimum')
+                        ->maxZoomField('max_zoom', 'Zoom maximum')
                         ->scene(fn (?MapScene $record, callable $get): MapScene => $record ?? new MapScene([
                             'center_latitude' => $get('center_latitude'),
                             'center_longitude' => $get('center_longitude'),
@@ -99,12 +102,6 @@ class MapSceneResource extends Resource implements HasKnowledgeBase
                             'mode' => $get('mode'),
                             'is_active' => true,
                         ])),
-                    // Pas de bouton "capturer le zoom" ici : le champ zoom se
-                    // met déjà à jour tout seul quand on déplace la vue
-                    // interactive (mode viewport de MapViewportPicker).
-                    TextInput::make('zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22)->live(onBlur: true),
-                    TextInput::make('min_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
-                    TextInput::make('max_zoom')->numeric()->step('0.01')->minValue(0)->maxValue(22),
                 ]),
             Section::make('Aperçu enregistré')->schema([
                 LivewireComponent::make(MapViewer::class, fn (?MapScene $record) => ['scene' => $record, 'showRefresh' => true])

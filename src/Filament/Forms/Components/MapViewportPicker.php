@@ -15,6 +15,9 @@ use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Illuminate\Support\Js;
 use Livewire\Attributes\Renderless;
 
+/**
+ * @deprecated Utiliser MapPositionInput (celui-ci reporte ses changements en direct dans le formulaire).
+ */
 class MapViewportPicker extends Field
 {
     public const TYPE_COORDINATE = 'coordinate';

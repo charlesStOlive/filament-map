@@ -55,48 +55,62 @@ En mode scène, fournir ou remplacer des couches externes est refusé. Les ancie
 
 Voir [les scènes cartographiques](docs/knowledge-base/map/scenes.md).
 
-## Saisir une position : `CoordinatesInput`
+## Saisir une position : `MapPositionInput`
 
-Un seul composant de formulaire pour une paire latitude / longitude, sur une
-seule ligne : deux champs numériques bornés (−90…90, −180…180) fusionnés sous un
-libellé, la règle « les deux ou aucune » (`required()` les exige tous les
-deux), et un unique bouton icône (carte + repère, libellé en infobulle) qui
-ouvre la carte dans un grand popup (7xl, la carte prend les deux tiers de la
-hauteur de l'écran ; un bouton la passe en **plein écran**, Échap en sort).
-Cliquer sur la carte ou déplacer le repère met le formulaire à jour en direct ;
-« Terminé » referme le popup.
+Un composant de formulaire pour une **position sur la carte** et les réglages qui
+l'accompagnent (zoom, zoom minimum et maximum, et d'autres à volonté).
 
-Au-dessus de la carte, un champ **cherche un lieu ou une adresse** (« Siem Reap »,
-« 12 rue de la Paix, Paris ») : les résultats se listent, un clic cale la carte
-dessus et pose le repère. Voir « Recherche d'adresse » plus bas.
+- **Dans la page**, un **résumé mis en forme** — latitude, longitude, zoom… — avec
+  un aperçu carré de la carte et une icône pour le modifier.
+- **Dans un grand popup**, le formulaire : la position se choisit en cliquant sur la
+  carte ou en déplaçant le repère, en saisissant ses propres coordonnées, ou en
+  **cherchant une adresse** ; le zoom, le zoom minimum et le zoom maximum se
+  prennent sur la carte avec leur bouton (le zoom de départ suit aussi la carte
+  quand on la zoome). Un bouton passe la carte en **plein écran**, un autre la
+  recentre sur le repère.
+- **Rien n'est reporté dans le formulaire avant « Valider »** : la croix, Échap et
+  « Annuler » abandonnent les changements, et le popup se rouvre sur les valeurs
+  enregistrées. « Valider » vérifie la cohérence (zoom minimum ≤ zoom de départ ≤ zoom
+  maximum, latitude et longitude ensemble).
 
-Selon le nom donné à `make()`, la position se stocke dans un JSON ou dans deux
-colonnes SQL :
+Les valeurs restent dans des **champs frères** du composant (colonnes SQL, ou clés
+d'un tableau JSON), avec leurs règles de validation :
 
 ```php
-// Deux colonnes SQL (frères du composant) : `latitude` / `longitude` par défaut…
-CoordinatesInput::make()->required();
-// … ou nommées à la demande.
-CoordinatesInput::make()->latitudeField('center_latitude')->longitudeField('center_longitude');
-
-// Un JSON : l'état est ['latitude' => …, 'longitude' => …] sous la clé `position`
-// (colonne castée en array, ou clé d'un tableau JSON).
-CoordinatesInput::make('position');
+MapPositionInput::make()
+    ->label('Vue de départ')
+    ->latitudeField('map_center_latitude')->longitudeField('map_center_longitude')
+    ->zoomField('map_zoom', 'Zoom de départ')
+    ->minZoomField('map_min_zoom', 'Zoom min')
+    ->maxZoomField('map_max_zoom', 'Zoom max')
+    ->thumbnailField('map_thumbnail')
+    ->scene(fn (Get $get) => MapScene::find($get('map_scene_id')));
 ```
 
-Options : `->label()` / `->hiddenLabel()` (« Coordonnées » par défaut),
-`->scene($scene)` (couches de la carte ; sans scène connue, ni bouton ni
-carte), `->viewport('zoom')` (cadrage d'une vue de départ : la position est
-celle du **repère**, posé au clic ou déplacé, et le zoom est celui que la carte
-affiche, arrondi au centième ; déplacer la carte ne change pas la position, le
-bouton « Centrer sur le repère » y ramène la vue ; le champ de zoom reste un
-champ frère), `->initialZoom()`, `->mapHeight()`,
-`->withoutMap()` (saisie seule), `->live(onBlur: true)`. `MapViewportPicker`
-prend `->withoutSearch()` pour retirer la recherche d'adresse.
+Options : `->label()` (« Position » par défaut), `->required()` (position
+obligatoire), `->zoomField()`, `->minZoomField()`, `->maxZoomField()`, `->field($nom,
+$libellé, min:, max:, step:, kind:, follow:, role:)` pour d'autres réglages
+numériques (`kind: 'zoom'` leur donne le bouton « zoom actuel »),
+`->thumbnailField()`, `->scene($scene)` (couches de la carte ; sans scène connue, ni
+carte ni bouton de recherche : on ne saisit que les coordonnées), `->initialZoom()`,
+`->mapHeight()`, `->withoutSearch()`. Les coordonnées sont gardées à 5 décimales
+(environ un mètre), les zooms au centième.
 
-Il remplace l'ancien `CoordinatePicker` (dont le bouton n'était écouté par
-personne). `MapViewportPicker` reste disponible seul, et porte toujours
-`captureZoomAction()` pour les champs de zoom.
+**L'aperçu carré** est une image de la carte, centrée sur le repère, prise **dans le
+navigateur** au moment de « Valider » : le canevas WebGL de MapLibre est lu
+directement (`canvas.toDataURL`, recadré et réduit à 192 × 192 px, environ 8 à
+12 Ko), sans Browsershot ni navigateur côté serveur. Il est gardé en texte
+(`data:image/jpeg;base64,…`) dans le champ `->thumbnailField()`. Il faut que le fond de
+carte autorise le chargement de ses tuiles depuis un autre domaine (CORS), ce que font
+OpenStreetMap et MapTiler ; sinon aucun aperçu n'est produit (la position, elle, reste
+valide).
+
+Le JavaScript est `resources/js/map-position-input.js` (copié dans
+`public/vendor/filament-map`) ; la recherche d'adresse est `MapPositionEditor::searchAddress()`.
+
+`CoordinatesInput` et `MapViewportPicker` (ancien sélecteur : les valeurs changeaient en
+direct, le repère suivait la carte) restent disponibles mais sont **obsolètes** :
+utiliser `MapPositionInput`.
 
 ### Clés des fournisseurs de fonds de carte
 
@@ -108,7 +122,7 @@ fournisseur, ajouter une entrée à `keys` suffit (`{key:autre}`).
 
 ### Recherche d'adresse
 
-`MapViewportPicker` (donc `CoordinatesInput`) interroge un **service de
+`MapPositionEditor` (donc `MapPositionInput`) interroge un **service de
 géocodage** par le serveur : la méthode `searchAddress()` du champ, appelée depuis
 la carte avec `$wire.callSchemaComponentMethod()` (aucune route à déclarer, les
 droits sont ceux de la page). Le pilote par défaut est **Nominatim**

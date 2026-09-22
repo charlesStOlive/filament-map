@@ -4,7 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
-use CharlesStOlive\FilamentMap\Filament\Forms\Components\CoordinatesInput;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapPositionInput;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\Pages\CreateGeoPoint;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\Pages\EditGeoPoint;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPoints\Pages\ListGeoPoints;
@@ -68,7 +68,7 @@ class GeoPointResource extends Resource implements HasKnowledgeBase
             Section::make('Coordonnées')
                 ->columns(2)
                 ->schema([
-                    CoordinatesInput::make()->required(),
+                    MapPositionInput::make()->label('Coordonnées')->required(),
                 ]),
             Section::make('Apparence')
                 ->description('Les comportements sont désormais définis centralement dans une orchestration.')
