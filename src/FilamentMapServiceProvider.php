@@ -18,7 +18,7 @@ class FilamentMapServiceProvider extends PackageServiceProvider
             ->name('filament-map')
             ->hasConfigFile('filament-map')
             ->hasViews('filament-map')
-            ->hasMigrations(['create_filament_map_tables', 'create_filament_map_scene_tables'])
+            ->hasMigrations(['create_filament_map_tables', 'create_filament_map_scene_tables', 'add_thumbnail_to_filament_map_scenes_table'])
             ->hasCommands([
                 InstallFilamentMapCommand::class,
             ]);

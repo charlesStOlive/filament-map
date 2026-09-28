@@ -11,7 +11,7 @@ class MapScene extends Model
     protected $fillable = [
         'name', 'slug', 'description', 'mode',
         'center_latitude', 'center_longitude', 'zoom', 'min_zoom', 'max_zoom', 'bounds',
-        'options', 'is_active',
+        'thumbnail', 'options', 'is_active',
     ];
 
     protected function casts(): array

@@ -18,8 +18,6 @@ const FALLBACK_STYLE = (tiles) => ({
     layers: [{ id: 'filament-map-position-fallback', type: 'raster', source: 'filament-map-position-fallback' }],
 })
 
-const THUMBNAIL_SIZE = 192
-
 const blank = (value) => value === null || value === undefined || value === ''
 
 const round = (value, decimals) => {
@@ -445,8 +443,9 @@ window.filamentMapPosition = function filamentMapPosition(config) {
 
         // ─── Miniature ───────────────────────────────────────────────────
 
-        // Une image carrée de la carte, centrée sur le repère, lue directement dans le canevas de la carte (aucun service
-        // ni navigateur sans écran côté serveur). Elle sert d'aperçu sous le bouton de modification.
+        // Une image de la carte, centrée sur le repère, lue directement dans le canevas de la carte (aucun service ni
+        // navigateur sans écran côté serveur), au format demandé (`config.thumbnail` : carrée avec repère par défaut). Elle
+        // sert d'aperçu sous le bouton de modification.
         async captureThumbnail() {
             if (!config.hasThumbnail || !this.map || !this.marker) {
                 return null
@@ -473,7 +472,7 @@ window.filamentMapPosition = function filamentMapPosition(config) {
                 return await new Promise((resolve) => {
                     map.once('render', () => {
                         try {
-                            resolve(this.squareFrom(map.getCanvas()))
+                            resolve(this.frameFrom(map.getCanvas()))
                         } catch (error) {
                             resolve(null)
                         }
@@ -487,20 +486,37 @@ window.filamentMapPosition = function filamentMapPosition(config) {
             }
         },
 
-        squareFrom(canvas) {
-            const side = Math.min(canvas.width, canvas.height)
+        // Le plus grand cadre au format de la miniature, pris au centre du canevas, puis réduit à sa taille.
+        frameFrom(canvas) {
+            const { width, height, marker } = config.thumbnail ?? { width: 192, height: 192, marker: true }
+            const ratio = width / height
+            const sourceWidth = Math.min(canvas.width, canvas.height * ratio)
+            const sourceHeight = sourceWidth / ratio
             const output = document.createElement('canvas')
 
-            output.width = output.height = THUMBNAIL_SIZE
+            output.width = width
+            output.height = height
 
             const context = output.getContext('2d')
 
-            context.drawImage(canvas, (canvas.width - side) / 2, (canvas.height - side) / 2, side, side, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+            context.drawImage(
+                canvas,
+                (canvas.width - sourceWidth) / 2, (canvas.height - sourceHeight) / 2, sourceWidth, sourceHeight,
+                0, 0, width, height,
+            )
 
-            // Le repère, au centre : celui de la page est un élément HTML, absent du canevas.
-            const x = THUMBNAIL_SIZE / 2
-            const y = THUMBNAIL_SIZE / 2
+            if (marker) {
+                this.drawMarker(context, width / 2, height / 2)
+            }
 
+            const data = output.toDataURL('image/jpeg', 0.72)
+
+            // Un canevas vide (fond pas encore chargé) donne une image minuscule : on n'en garde pas.
+            return data.length > 1500 ? data : null
+        },
+
+        // Le repère, pointe en (x, y) : celui de la page est un élément HTML, absent du canevas.
+        drawMarker(context, x, y) {
             context.fillStyle = '#e11d48'
             context.strokeStyle = '#ffffff'
             context.lineWidth = 3
@@ -514,11 +530,6 @@ window.filamentMapPosition = function filamentMapPosition(config) {
             context.beginPath()
             context.arc(x, y - 14, 4, 0, Math.PI * 2)
             context.fill()
-
-            const data = output.toDataURL('image/jpeg', 0.72)
-
-            // Un canevas vide (fond pas encore chargé) donne une image minuscule : on n'en garde pas.
-            return data.length > 1500 ? data : null
         },
     }
 }

@@ -31,6 +31,9 @@ class MapPositionEditor extends Field
 
     protected ?string $thumbnailField = null;
 
+    /** @var array{width: int, height: int, marker: bool} */
+    protected array $thumbnailFormat = ['width' => 192, 'height' => 192, 'marker' => true];
+
     protected bool|Closure $isPositionRequired = false;
 
     protected bool $hasSearch = true;
@@ -45,12 +48,14 @@ class MapPositionEditor extends Field
 
     /**
      * @param  array<string, array{label: string, kind: string, min: float|null, max: float|null, step: float, follow: bool, role: string|null}>  $fields
+     * @param  array{width: int, height: int, marker: bool}  $thumbnailFormat
      */
     public function configureFor(
         string $latitudeField,
         string $longitudeField,
         array $fields,
         ?string $thumbnailField,
+        array $thumbnailFormat,
         bool|Closure $required,
         bool $search,
         MapScene|int|string|Closure|null $scene,
@@ -62,6 +67,7 @@ class MapPositionEditor extends Field
         $this->longitudeField = $longitudeField;
         $this->fields = $fields;
         $this->thumbnailField = $thumbnailField;
+        $this->thumbnailFormat = $thumbnailFormat;
         // Évalué à l'affichage : la fermeture a besoin du formulaire (`Get`), où ce champ n'est pas encore rattaché ici.
         $this->isPositionRequired = $required;
         $this->hasSearch = $search;
@@ -92,6 +98,12 @@ class MapPositionEditor extends Field
     public function getThumbnailField(): ?string
     {
         return $this->thumbnailField;
+    }
+
+    /** @return array{width: int, height: int, marker: bool} */
+    public function getThumbnailFormat(): array
+    {
+        return $this->thumbnailFormat;
     }
 
     public function isPositionRequired(): bool

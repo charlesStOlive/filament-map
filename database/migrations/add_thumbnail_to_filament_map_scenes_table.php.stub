@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * La vignette d'une scène : une image JPEG en data URL, prise sur la carte de sa vue initiale, avec ses couches (voir
+ * MapPositionInput::thumbnailField()). Elle la représente dans la liste des scènes et dans MapScenePicker.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table(config('filament-map.tables.scenes', 'filament_map_scenes'), function (Blueprint $table): void {
+            $table->mediumText('thumbnail')->nullable()->after('bounds');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table(config('filament-map.tables.scenes', 'filament_map_scenes'), function (Blueprint $table): void {
+            $table->dropColumn('thumbnail');
+        });
+    }
+};

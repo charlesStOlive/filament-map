@@ -34,7 +34,7 @@ Le mode ne remplace pas les couches. Il définit le contexte général dans lequ
 ### Composer les couches
 
 1. Choisissez les couches de la bibliothèque et ordonnez-les.
-2. Pour chaque couche, choisissez sa visibilité initiale et, si nécessaire, un style propre à cette scène.
+2. Pour chaque couche, choisissez sa visibilité initiale et, si nécessaire, un style propre à cette scène (cadre replié « Réglages propres à cette scène », en JSON).
 
 Une couche masquée à l'ouverture fait toujours partie de la scène : une interaction peut l'afficher. Une couche absente doit être ajoutée dans la bibliothèque des couches avant de pouvoir être utilisée ici.
 
@@ -44,13 +44,16 @@ Une couche masquée à l'ouverture fait toujours partie de la scène : une inter
 - **Zoom** : niveau initial (accepte deux décimales, par exemple `9.33`). Une valeur faible montre une grande zone ; une valeur élevée montre davantage de détails.
 - **Zoom minimum** et **zoom maximum** : limitent respectivement le recul et le rapprochement autorisés (également en décimal).
 - **Vue initiale** : un résumé (latitude, longitude, zoom, zoom minimum et maximum) et une icône pour le modifier. Elle ouvre un grand popup : **cliquez** sur la carte pour poser le repère (ou déplacez-le, saisissez des coordonnées, ou cherchez un lieu ou une adresse), puis reprenez le zoom de la carte avec le bouton de chaque champ de zoom. La scène s'ouvrira **centrée sur le repère**, au zoom choisi. Rien n'est enregistré avant **Valider** : la croix, Échap et **Annuler** abandonnent les changements.
+- **Vignette** : **Valider** prend aussi une image de la carte, au format 16/9, centrée sur le repère, avec les couches choisies juste au-dessus (même pas encore enregistrées) et leur visibilité à l'ouverture. Elle représente la scène dans la liste des scènes et là où l'on choisit une scène (la carte de départ d'un voyage, par exemple). Pour la refaire après avoir changé les couches, rouvrez la vue initiale et validez de nouveau.
 - **Bounds** : rectangle géographique décrivant la zone visible ou autorisée (réglages avancés).
 
-Pour éviter une scène vide à l'ouverture, utilisez la vue initiale après avoir ajouté les premières couches.
+Le formulaire suit cet ordre : les couches d'abord, la vue initiale ensuite, pour que la carte du popup et la vignette les montrent.
 
 ## Enregistrer puis contrôler
 
-Après avoir composé les couches et réglé le cadrage, enregistrez puis contrôlez l'aperçu affiché sur la fiche de la scène.
+Après avoir composé les couches et réglé le cadrage, enregistrez puis contrôlez l'aperçu affiché sur la fiche de la scène (cadre replié « Aperçu enregistré », avec les points des parcours).
+
+La liste des scènes montre chacune avec sa vignette, son nom, sa description, son mode et son nombre de couches. Une scène sans vignette y a un cadre gris.
 
 ## Utiliser la scène
 

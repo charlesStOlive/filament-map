@@ -13,6 +13,7 @@
     $modalId = 'filament-map-position-modal-'.$slug;
     $positionFields = $getPositionFields();
     $thumbnailField = $getThumbnailField();
+    $thumbnailFormat = $getThumbnailFormat();
     $hasMap = $isMapAvailable();
     $mapPayload = $hasMap ? $getMapPayload() : null;
     $watchedPaths = array_merge(
@@ -45,7 +46,9 @@
 
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     <div
-        wire:key="{{ $mapDomId }}-{{ $mapPayload['scene']['id'] ?? $mapPayload['map']['id'] ?? 'empty' }}"
+        {{-- Les couches entrent dans la clé : la carte du popup se refait quand elles changent (celles d'une scène qu'on
+             est en train de composer, par exemple), sans quoi elle garderait celles du premier affichage. --}}
+        wire:key="{{ $mapDomId }}-{{ $mapPayload['scene']['id'] ?? $mapPayload['map']['id'] ?? 'empty' }}-{{ md5(json_encode($mapPayload['layers'] ?? [])) }}"
         x-data="filamentMapPosition({
             id: @js($mapDomId),
             modalId: @js($modalId),
@@ -55,6 +58,7 @@
             hasMap: @js($hasMap),
             required: @js($isPositionRequired()),
             hasThumbnail: @js($thumbnailField !== null),
+            thumbnail: @js($thumbnailFormat),
             fields: @js(collect($positionFields)->map(fn (array $field, string $key): array => ['key' => $key, ...$field])->values()->all()),
             mapPayload: @js($mapPayload),
             defaults: {
@@ -81,10 +85,10 @@
         })"
         data-map-position-root
     >
-        {{-- Le résumé : ce qui est enregistré, mis en forme, avec un aperçu carré de la carte et le bouton pour le modifier. --}}
+        {{-- Le résumé : ce qui est enregistré, mis en forme, avec un aperçu de la carte (à son format) et le bouton pour le modifier. --}}
         <div class="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900" data-map-position-summary>
             @if ($thumbnailField !== null)
-                <div class="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10" data-map-position-thumbnail>
+                <div class="h-20 shrink-0 overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10" style="aspect-ratio: {{ $thumbnailFormat['width'] }} / {{ $thumbnailFormat['height'] }}" data-map-position-thumbnail>
                     <template x-if="values.thumbnail">
                         <img x-bind:src="values.thumbnail" alt="Aperçu de la carte" class="h-full w-full object-cover">
                     </template>

@@ -42,6 +42,9 @@ class MapPositionInput extends Component
 
     protected ?string $thumbnailField = null;
 
+    /** @var array{width: int, height: int, marker: bool} */
+    protected array $thumbnailFormat = ['width' => 192, 'height' => 192, 'marker' => true];
+
     protected bool|Closure $isRequired = false;
 
     protected bool $hasSearch = true;
@@ -121,10 +124,15 @@ class MapPositionInput extends Component
         return $this;
     }
 
-    /** Le champ où garder la miniature carrée de la carte (une image, en texte : voir l'aperçu sous le bouton). */
-    public function thumbnailField(?string $field = 'thumbnail'): static
+    /**
+     * Le champ où garder une miniature de la carte, prise à « Valider » (une image JPEG, en texte : voir l'aperçu sous le
+     * bouton). Carrée et marquée d'un repère au centre par défaut — l'aperçu d'une position. `$width` × `$height` en
+     * donnent le format (en pixels), `$marker: false` la laisse sans repère : l'aperçu d'une vue plutôt que d'un point.
+     */
+    public function thumbnailField(?string $field = 'thumbnail', int $width = 192, int $height = 192, bool $marker = true): static
     {
         $this->thumbnailField = $field;
+        $this->thumbnailFormat = ['width' => $width, 'height' => $height, 'marker' => $marker];
 
         return $this;
     }
@@ -199,7 +207,9 @@ class MapPositionInput extends Component
         }
 
         if ($this->thumbnailField !== null) {
-            $schema[] = Hidden::make($this->thumbnailField)->rules(['nullable', 'string', 'max:60000']);
+            // Une image en base64 : un JPEG de cette taille tient largement dans un caractère par pixel.
+            $maxLength = max(60000, $this->thumbnailFormat['width'] * $this->thumbnailFormat['height']);
+            $schema[] = Hidden::make($this->thumbnailField)->rules(['nullable', 'string', 'max:'.$maxLength]);
         }
 
         $schema[] = MapPositionEditor::make('position_'.$this->latitudeField)
@@ -210,6 +220,7 @@ class MapPositionInput extends Component
                 longitudeField: $this->longitudeField,
                 fields: $this->fields,
                 thumbnailField: $this->thumbnailField,
+                thumbnailFormat: $this->thumbnailFormat,
                 required: $this->isRequired,
                 search: $this->hasSearch,
                 scene: $this->scene,
