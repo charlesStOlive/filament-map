@@ -5,13 +5,16 @@ namespace CharlesStOlive\FilamentMap\Filament\Clusters;
 use BackedEnum;
 use Illuminate\Contracts\Support\Htmlable;
 use UnitEnum;
-use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapClusterAuthorization;
 use Filament\Clusters\Cluster;
 use Filament\Panel;
 
 class MapCluster extends Cluster
 {
-    use HasMapClusterAuthorization;
+    /** Accessible (menu et adresse) dès qu'une de ses listes l'est — règle native de Filament. */
+    public static function canAccess(): bool
+    {
+        return static::canAccessClusteredComponents();
+    }
     protected static string | BackedEnum | null $navigationIcon = null;
 
     public static function getNavigationLabel(): string

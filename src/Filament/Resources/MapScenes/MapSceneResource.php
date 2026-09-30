@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentMap\Filament\Resources\MapScenes;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
-use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapPositionInput;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\CreateMapScene;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapScenes\Pages\EditMapScene;
@@ -42,7 +41,6 @@ use Illuminate\Support\Str;
 class MapSceneResource extends Resource implements HasKnowledgeBase
 {
     use BelongsToConfiguredMapCluster;
-    use HasMapResourceAuthorization;
 
     protected static ?string $model = MapScene::class;
 

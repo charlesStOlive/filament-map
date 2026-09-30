@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentMap\Filament\Resources\MapLayers;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
-use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\MapLayerPreview;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\Pages\CreateMapLayer;
 use CharlesStOlive\FilamentMap\Filament\Resources\MapLayers\Pages\EditMapLayer;
@@ -13,6 +12,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use CharlesStOlive\FilamentMap\Support\MapPermissions;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -30,9 +30,17 @@ use Illuminate\Support\Str;
 class MapLayerResource extends Resource implements HasKnowledgeBase
 {
     use BelongsToConfiguredMapCluster;
-    use HasMapResourceAuthorization;
 
-    public static array $specificPermissions = ['import', 'export', 'preview'];
+    /**
+     * Action propre, déclarée au format de charlesstolive/filament-permission-manager, sans en dépendre (voir
+     * Support\MapPermissions) : voir l'aperçu d'une couche dans son formulaire.
+     *
+     * @var array<int, string>
+     */
+    public static array $specificPermissions = ['preview'];
+
+    /** @var array<string, string> Son libellé dans l'écran des rôles. */
+    protected static array $permissionLabels = ['preview' => 'Voir l’aperçu d’une couche sur la carte'];
 
     protected static ?string $model = MapLayer::class;
 
@@ -150,6 +158,7 @@ class MapLayerResource extends Resource implements HasKnowledgeBase
             Section::make('Aperçu')
                 ->schema([
                     MapLayerPreview::make('layer_preview')
+                        ->visible(fn (): bool => MapPermissions::allows(static::class, 'preview'))
                         ->label('Preview du layer')
                         ->dehydrated(false)
                         ->columnSpanFull(),

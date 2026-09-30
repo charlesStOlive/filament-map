@@ -555,10 +555,20 @@ Le rendu exact sera resolu par le plugin ou par l'application parente via un res
 
 Le plugin s'aligne sur le plugin local `filament-permission-manager`.
 
-Le systeme reste optionnel :
+Le systeme reste optionnel, et le plugin ne depend d'aucun gestionnaire de permissions : il **declare** ses droits,
+comme tous les plugins `filament-*` (septembre 2026) :
 
-- si `charlesstolive/filament-permission-manager` est installe, les Resources et le Cluster verifient les permissions via son `PermissionService` ;
-- si le plugin d'autorisation n'est pas installe, `filament-map` peut continuer a fonctionner selon la configuration `filament-map.authorization.allow_without_permission_manager`.
+- les actions de base des Resources (voir, creer, modifier, supprimer) passent par la policy du modele : avec
+  `charlesstolive/filament-permission-manager`, sa policy de repli verifie `{cluster}.{resource}.{action}` ;
+- les actions propres sont declarees dans `$specificPermissions` (`preview` pour une couche, `attach-media` pour un point
+  et un type de point), avec leur libelle dans `$permissionLabels`, et verifiees par l'ability Gate
+  `{classe de la Resource}.{action}` (`Support\MapPermissions`). Sans gestionnaire de permissions, tout reste ouvert a
+  qui voit la liste ;
+- le Cluster n'apparait que si une de ses listes est ouverte (regle native de Filament).
+
+L'ancienne passerelle (`Support\PermissionManager`, `HasMapResourceAuthorization`, `HasMapClusterAuthorization`, config
+`filament-map.authorization.*`) a ete retiree ; `import`, `export` et `pick-coordinates`, declares sans aucun ecran
+correspondant, aussi.
 
 Le format de permission reprend exactement la convention du permission-manager :
 

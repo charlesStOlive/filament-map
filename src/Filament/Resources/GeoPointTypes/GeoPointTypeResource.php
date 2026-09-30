@@ -3,7 +3,6 @@
 namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
-use CharlesStOlive\FilamentMap\Filament\Concerns\HasMapResourceAuthorization;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\CreateGeoPointType;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\EditGeoPointType;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\ListGeoPointTypes;
@@ -15,6 +14,7 @@ use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use CharlesStOlive\FilamentMap\Support\MapPermissions;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -31,9 +31,17 @@ use Illuminate\Support\Str;
 class GeoPointTypeResource extends Resource implements HasKnowledgeBase
 {
     use BelongsToConfiguredMapCluster;
-    use HasMapResourceAuthorization;
 
+    /**
+     * Action propre, déclarée au format de charlesstolive/filament-permission-manager, sans en dépendre (voir
+     * Support\MapPermissions) : joindre ou changer l'image de marqueur par défaut du type.
+     *
+     * @var array<int, string>
+     */
     public static array $specificPermissions = ['attach-media'];
+
+    /** @var array<string, string> Son libellé dans l'écran des rôles. */
+    protected static array $permissionLabels = ['attach-media' => 'Joindre ou changer l’image de marqueur par défaut'];
 
     protected static ?string $model = GeoPointType::class;
 
@@ -110,6 +118,7 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
             Section::make('Options avancees')
                 ->schema([
                     SpatieMediaLibraryFileUpload::make('default_marker_image')
+                        ->disabled(fn (): bool => ! MapPermissions::allows(static::class, 'attach-media'))
                         ->label('Image du point')
                         ->collection(config('filament-map.media_collections.default_marker_image', 'default_marker_image'))
                         ->image()
