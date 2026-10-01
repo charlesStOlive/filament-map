@@ -28,7 +28,7 @@ Dans la plupart des formulaires, la latitude est affichée avant la longitude. D
 
 ## Afficher le point sur une scène
 
-Il n'existe pas de champ pour rattacher un point directement à une scène cartographique : ce lien se fait uniquement à travers un parcours interactif (ou l'automatisation Voyage simplifié). Le point reste un seul enregistrement partagé, réutilisable par plusieurs parcours ; le retirer d'un parcours ne le supprime pas de la bibliothèque.
+Il n'existe pas de champ pour rattacher un point directement à une scène cartographique : ce lien se fait uniquement à travers un parcours interactif (ou l'automatisation Carnet de voyage). Le point reste un seul enregistrement partagé, réutilisable par plusieurs parcours ; le retirer d'un parcours ne le supprime pas de la bibliothèque.
 
 Un parcours peut cependant porter ses propres réglages pour l'occurrence d'un point sur sa scène, par exemple sa clé, son ordre d'affichage ou son infobulle. Ces réglages vivent dans le parcours, pas sur le point lui-même, et n'affectent pas les autres parcours qui réutilisent ce même point.
 

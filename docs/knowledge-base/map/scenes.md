@@ -59,7 +59,7 @@ La liste des scènes montre chacune avec sa vignette, son nom, sa description, s
 
 Une scène ne place jamais de point toute seule : les points géographiques (hotpoints) apparaissent sur elle uniquement à travers un parcours interactif qui rattache à la fois la scène (rôle **Scène cartographique**) et les points (rôle **Hotpoint**) — voir la documentation de l'orchestrateur. Deux parcours peuvent partager la même scène tout en montrant des points différents.
 
-Dans Voyage simplifié, choisissez une scène puis renseignez les journées : chaque journée crée automatiquement son propre hotpoint, sans jamais modifier la scène partagée. Un voyage peut aussi surcharger localement le centre et le zoom de départ, sans toucher à la scène ni aux autres voyages qui l'utilisent.
+Dans un carnet de voyage, choisissez une scène puis renseignez les journées : chaque journée crée automatiquement son propre hotpoint, sans jamais modifier la scène partagée. Un voyage peut aussi surcharger localement le centre et le zoom de départ, sans toucher à la scène ni aux autres voyages qui l'utilisent.
 
 Dans l'éditeur complexe (parcours interactif), ajoutez une scène dans l'onglet **Scènes cartographiques**, puis les hotpoints et contenus du scénario. Une action sur une couche cible cette scène et la clé d'une de ses couches.
 

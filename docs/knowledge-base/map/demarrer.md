@@ -13,7 +13,7 @@ La cartographie est organisée autour de quatre ressources complémentaires :
 3. **Couches cartographiques** : ajoutent un fond, des limites, des tracés ou des données GeoJSON.
 4. **Scènes cartographiques** : assemblent une vue initiale (centre, zoom, limites) et une composition de couches. C'est la seule ressource qui produit une carte affichable.
 
-Une scène décrit ce qui doit être affiché en fond. Les points géographiques n'appartiennent pas à une scène : ils sont placés dessus par un **parcours interactif** (ou par l'automatisation Voyage simplifié, qui en crée un pour chaque journée). Les réactions à un clic, l'ouverture d'un contenu ou le déplacement automatique de la vue sont aussi configurés dans le parcours interactif.
+Une scène décrit ce qui doit être affiché en fond. Les points géographiques n'appartiennent pas à une scène : ils sont placés dessus par un **parcours interactif** (ou par l'automatisation Carnet de voyage, qui en crée un pour chaque journée). Les réactions à un clic, l'ouverture d'un contenu ou le déplacement automatique de la vue sont aussi configurés dans le parcours interactif.
 
 ## Ordre conseillé
 
@@ -24,7 +24,7 @@ Pour créer une scène fiable sans revenir plusieurs fois sur les mêmes écrans
 3. Créez la scène, réglez sa vue initiale (cadrage) puis composez ses couches.
 4. Ouvrez l'aperçu de la scène.
 5. Créez les points géographiques nécessaires et placez-les avec le sélecteur de coordonnées.
-6. Rattachez la scène et les points à un parcours interactif (ou à un voyage simplifié), puis configurez les déclencheurs.
+6. Rattachez la scène et les points à un parcours interactif (ou à un carnet de voyage), puis configurez les déclencheurs.
 
 ## Notions à ne pas confondre
 
@@ -38,7 +38,7 @@ Le **point** porte le lieu et ses coordonnées. Le **type de point** fournit son
 
 ### Point et scène
 
-Un point géographique n'est jamais rattaché directement à une scène : il n'existe aucun champ ni écran pour cela. C'est le parcours interactif (ou le voyage simplifié) qui les fait cohabiter, en donnant à la scène le rôle **Scène cartographique** et à chaque point le rôle **Hotpoint**.
+Un point géographique n'est jamais rattaché directement à une scène : il n'existe aucun champ ni écran pour cela. C'est le parcours interactif (ou le carnet de voyage) qui les fait cohabiter, en donnant à la scène le rôle **Scène cartographique** et à chaque point le rôle **Hotpoint**.
 
 ### Affichage et comportement
 
