@@ -35,6 +35,8 @@ Un type de point est un modèle d'apparence réutilisable. Il permet de garantir
 - **agrandi**, avec sa zone de contenu en pointillés et une croix rouge à l'endroit de la position du point : c'est là que l'ancrage pose le marqueur (la pointe d'une épingle, le centre d'un cercle) ;
 - son **statut** : « Accepte une image », « Icône », « Texte », « Forme seule »… Quand un réglage ne produit pas l'effet attendu, l'aperçu dit pourquoi : forme sans zone de contenu, icône introuvable, SVG illisible.
 
+La liste des types montre aussi, pour chacun, son marqueur en taille réelle et ce statut (colonne « Marqueur »), avec son image par défaut s'il en a une, sinon une image d'exemple.
+
 Quand le type accepte une image, des **images d'exemple** (carrée, paysage, portrait, l'image par défaut du type s'il en a une, ou aucune) montrent comment une image se recadre dans la zone. Chacune a un repère à ses bords : ce qui disparaît est ce que la zone coupe.
 
 ## Rendu par défaut

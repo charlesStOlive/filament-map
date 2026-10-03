@@ -21,11 +21,12 @@
     wire:key="filament-map-marker-preview-{{ md5(json_encode($preview)) }}"
     x-data="{
         appearances: @js($preview['appearances']),
-        sample: @js($preview['default']),
+        {{-- Dans la liste, l'image du type quand il en a une : c'est elle qu'il montre à défaut. --}}
+        sample: @js($compact && isset($preview['appearances']['type']) ? 'type' : $preview['default']),
         draw: null,
         async init() {
             try {
-                const kept = sessionStorage.getItem('filament-map-marker-sample')
+                const kept = @js($compact) ? null : sessionStorage.getItem('filament-map-marker-sample')
                 if (kept && this.appearances[kept]) this.sample = kept
             } catch (error) {}
 

@@ -28,8 +28,10 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ColorColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
 use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 class GeoPointTypeResource extends Resource implements HasKnowledgeBase
@@ -160,11 +162,15 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
     public static function table(Table $table): Table
     {
         return $table
+            // L'image par défaut de chaque type, pour l'aperçu de son marqueur.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('media'))
             ->columns([
+                // Le marqueur tel que la carte le dessine, et ce qu'il accepte (voir MarkerPreview).
+                ViewColumn::make('marker')->label('Marqueur')->view('filament-map::tables.columns.marker-preview'),
                 TextColumn::make('name')->label('Nom')->searchable()->sortable(),
-                TextColumn::make('key')->searchable()->sortable(),
-                TextColumn::make('icon')->toggleable(),
-                ColorColumn::make('color'),
+                TextColumn::make('key')->label('Clé')->searchable()->sortable(),
+                TextColumn::make('icon')->label('Icône')->toggleable(isToggledHiddenByDefault: true),
+                ColorColumn::make('color')->label('Couleur')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('points_count')->counts('points')->label('Points'),
                 IconColumn::make('is_active')->boolean(),
             ])
