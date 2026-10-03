@@ -228,8 +228,9 @@ class MapPayloadBuilder
         $contentType = $declared === 'image' && blank($image) ? 'icon' : $declared;
         $contentValue = match ($contentType) {
             'image' => $image,
-            // La valeur saisie est le nom de l'icône quand le contenu est « Icône » ; sinon, celle du point ou du type.
-            'icon' => $declared === 'icon' && filled($content['value'] ?? null) ? $content['value'] : $icon,
+            // L'icône du point (donnée par un parcours : `options.icon`), sinon celle du type. Un type d'avant gardait son
+            // icône dans `content.value` : elle sert encore à défaut.
+            'icon' => filled($icon) ? $icon : ($declared === 'icon' ? ($content['value'] ?? null) : null),
             'text' => $content['value'] ?? null,
             default => null,
         };

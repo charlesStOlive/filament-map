@@ -21,8 +21,7 @@ Un type de point est un modèle d'apparence réutilisable. Il permet de garantir
 
 - **Nom** : libellé visible dans l'administration.
 - **Clé** : identifiant technique unique et stable.
-- **Icône** : nom d'icône reconnu par l'application, par exemple `heroicon-o-map-pin`.
-- **Couleur** : couleur principale du type.
+- **Couleur** : celle de la forme. Un parcours peut la remplacer pour ses points.
 - **Ordre** : position dans les listes ; les petites valeurs apparaissent en premier.
 - **Active** : rend le type disponible sans supprimer sa configuration.
 - **Description** : explique quand utiliser ce type.
@@ -41,6 +40,8 @@ Quand le type accepte une image, des **images d'exemple** (carrée, paysage, por
 
 ## Rendu par défaut
 
+Le formulaire suit l'ordre du dessin : la section **Forme** (la forme, sa taille, sa position), puis **Contenu de la zone** (ce qu'elle montre), puis **Options avancées** (variables de style, options), repliée.
+
 ### Forme
 
 - **Pin** : marqueur cartographique classique.
@@ -48,14 +49,20 @@ Quand le type accepte une image, des **images d'exemple** (carrée, paysage, por
 - **Étoile** : met en avant un point remarquable.
 - **SVG** : forme vectorielle personnalisée.
 
-### Contenu
+### Contenu de la zone
 
-- **Aucun** : seule la forme est affichée.
-- **Icône** : affiche une icône dans le marqueur.
-- **Image** : une mini-vignette ronde dans le marqueur (voir *Image du point* ci-dessous).
-- **Texte** : affiche une valeur courte, par exemple un numéro d'étape.
+La section **Contenu de la zone** commence par dire si la forme en a une : les formes fournies (épingle, cercle, étoile) en ont toutes une ; un SVG personnalisé seulement s'il marque un élément `data-slot` (voir plus bas). Sans zone, les choix autres que « Rien » sont grisés : la forme ne montre qu'elle-même.
 
-Seul un type dont le contenu est **Image**, et dont la forme a une zone de contenu, montre une image. Un parcours peut proposer une image à tous ses points (l'image de une d'une étape, par exemple) : les points d'un type qui n'est qu'une forme ou une icône l'ignorent simplement, sans erreur. On peut donc changer le type des points d'un parcours sans rien changer d'autre.
+La zone montre :
+
+- **Rien** : le point n'est que sa forme et sa couleur.
+- **Une icône** : celle du champ **Icône** (par exemple `heroicon-o-map-pin`). Un parcours peut la remplacer pour un point : dans le voyage, une période peut prendre la sienne.
+- **Une image (mini-vignette)** : celle que le parcours donne au point — dans le voyage, l'image de une de l'étape, à défaut sa première photo —, sinon l'**image par défaut** du type. Sans aucune image, le point montre l'icône du champ **Icône, à défaut d'image**. L'image elle-même ne se choisit pas point par point : c'est le parcours qui la fournit.
+- **Un texte** : court (4 caractères au plus), le même pour tous les points du type, par exemple un numéro.
+
+Seul le champ qui sert à ce choix est affiché.
+
+Seul un type dont le contenu est **Image**, et dont la forme a une zone de contenu, montre une image. Un parcours peut proposer une image à tous ses points : les points d'un type qui n'est qu'une forme ou une icône l'ignorent simplement, sans erreur. On peut donc changer le type des points d'un parcours sans rien changer d'autre.
 
 ### Taille et CSS
 

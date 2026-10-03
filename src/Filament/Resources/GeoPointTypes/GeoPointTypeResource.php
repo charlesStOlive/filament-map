@@ -14,6 +14,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ReplicateAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Slider;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -23,6 +24,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -64,8 +66,8 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
     }
 
     /**
-     * Les réglages à gauche, l'aperçu du marqueur à droite (MarkerPreview), qui suit la saisie : les champs qu'il lit
-     * sont `live()`.
+     * Les réglages à gauche, en trois temps — la forme, ce que montre sa zone de contenu, les options —, l'aperçu du
+     * marqueur à droite (MarkerPreview), qui suit la saisie : les champs qu'il lit sont `live()`.
      */
     public static function form(Schema $schema): Schema
     {
@@ -79,123 +81,24 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                             ->required()
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn(?string $state, callable $set) => $set('key', Str::slug($state ?? ''))),
-                        TextInput::make('key')->required()->unique(ignoreRecord: true),
-                        TextInput::make('icon')
-                            ->label('Icône')
-                            ->live(onBlur: true)
-                            ->helperText('Ex : heroicon-o-map-pin. Montrée quand le contenu est « Icône », ou à défaut d’image.'),
-                        ColorPicker::make('color')->label('Couleur')->live(),
+                        TextInput::make('key')->label('Clé')->required()->unique(ignoreRecord: true),
+                        ColorPicker::make('color')
+                            ->label('Couleur')
+                            ->live()
+                            ->helperText('Celle de la forme. Un parcours peut la remplacer pour ses points.'),
                         TextInput::make('sort_order')->label('Ordre')->numeric()->default(0),
                         Toggle::make('is_active')->label('Actif')->default(true),
                         Textarea::make('description')->columnSpanFull(),
                     ]),
-                Section::make('Rendu par défaut')
-                    ->description('La forme du marqueur et ce que sa zone de contenu montre. L’aperçu, à droite, suit vos réglages.')
-                    ->columns(2)
-                    ->statePath('marker_style')
+                static::shapeSection(),
+                static::contentSection(),
+                Section::make('Options avancées')
+                    ->collapsed()
                     ->schema([
-                        Select::make('shape')
-                            ->label('Forme')
-                            ->options(MarkerShapes::LABELS)
-                            ->default('pin')
-                            ->required()
-                            ->live(),
-                        Select::make('content.type')
-                            ->label('Contenu de la zone')
-                            ->options([
-                                'none' => 'Aucun : la forme seule',
-                                'icon' => 'Icône',
-                                'image' => 'Image (mini-vignette)',
-                                'text' => 'Texte',
-                            ])
-                            ->default('icon')
-                            ->required()
-                            ->live(),
-                        Textarea::make('svg')
-                            ->label('SVG personnalisé')
-                            ->visible(fn (Get $get): bool => $get('shape') === 'svg')
-                            // Gardé quand on essaie une autre forme : on peut y revenir sans le perdre.
-                            ->dehydratedWhenHidden()
-                            ->live(debounce: 600)
-                            ->helperText('Avec une viewBox. currentColor prend la couleur du point. La zone qui reçoit l’image, l’icône ou le texte est un circle, une ellipse ou un rect marqué data-slot (il n’est pas dessiné) ; sans elle, la forme reste seule. data-anchor="bottom" sur la balise svg pose sa base sur la position (centre par défaut). Scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
-                            ->rows(6)
-                            ->columnSpanFull(),
-                        TextInput::make('content.value')
-                            ->label(fn (Get $get): string => $get('content.type') === 'text' ? 'Texte' : 'Icône de la zone')
-                            ->visible(fn (Get $get): bool => in_array($get('content.type'), ['icon', 'text'], true))
-                            ->dehydratedWhenHidden()
-                            ->live(onBlur: true)
-                            ->helperText(fn (Get $get): string => $get('content.type') === 'text'
-                                ? 'Court : un numéro, deux lettres.'
-                                : 'Laissée vide, l’icône du type.'),
-                        Slider::make('size')
-                            ->label('Taille')
-                            ->range(MarkerShapes::MIN_PERCENT, MarkerShapes::MAX_PERCENT)
-                            ->step(5)
-                            ->default(100)
-                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
-                            ->formatStateUsing(fn (mixed $state): float => MarkerShapes::percent($state))
-                            ->live()
-                            ->helperText('En % de la taille standard : '.MarkerShapes::STANDARD_SIZE.' px sur le plus grand côté, celle de l’épingle. L’autre côté suit les proportions de la forme.')
-                            ->columnSpanFull(),
-                        Select::make('anchor')
-                            ->label('Ancrage')
-                            ->options([
-                                'center' => 'Centre',
-                                'bottom' => 'Bas (une pointe)',
-                                'top' => 'Haut',
-                                'left' => 'Gauche',
-                                'right' => 'Droite',
-                                'bottom-left' => 'Bas gauche',
-                                'bottom-right' => 'Bas droite',
-                                'top-left' => 'Haut gauche',
-                                'top-right' => 'Haut droite',
-                            ])
-                            ->placeholder('Celui de la forme')
-                            ->live()
-                            ->helperText('Le point de la forme posé sur la position (la croix rouge de l’aperçu). Vide : celui de la forme — la pointe d’une épingle, le data-anchor d’un SVG, sinon le centre.'),
-                        Slider::make('rotation')
-                            ->label('Rotation')
-                            ->range(-180, 180)
-                            ->step(5)
-                            ->default(0)
-                            ->tooltips(RawJs::make('`${Math.round($value)}°`'))
-                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
-                            ->live()
-                            ->helperText('En degrés, autour de l’ancrage.'),
-                        Slider::make('offset.x')
-                            ->label('Décalage horizontal')
-                            ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
-                            ->step(5)
-                            ->default(0)
-                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
-                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
-                            ->live()
-                            ->helperText('En % de la largeur du marqueur, vers la droite : il suit la taille.'),
-                        Slider::make('offset.y')
-                            ->label('Décalage vertical')
-                            ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
-                            ->step(5)
-                            ->default(0)
-                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
-                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
-                            ->live()
-                            ->helperText('En % de sa hauteur, vers le bas.'),
-                        KeyValue::make('css')
+                        KeyValue::make('marker_style.css')
                             ->label('Variables de style')
                             ->live(onBlur: true)
-                            ->helperText('Ex : --filament-map-marker-content-color (couleur de l’icône ou du texte), opacity.')
-                            ->columnSpanFull(),
-                    ]),
-                Section::make('Options avancées')
-                    ->schema([
-                        SpatieMediaLibraryFileUpload::make('default_marker_image')
-                            ->disabled(fn (): bool => ! MapPermissions::allows(static::class, 'attach-media'))
-                            ->label('Image par défaut')
-                            ->helperText('Pour un contenu « Image » : montrée quand ni le point ni le parcours n’en donnent une.')
-                            ->collection(config('filament-map.media_collections.default_marker_image', 'default_marker_image'))
-                            ->image()
-                            ->columnSpanFull(),
+                            ->helperText('Ex : --filament-map-marker-content-color (couleur de l’icône ou du texte), opacity.'),
                         KeyValue::make('options'),
                     ]),
             ])->columnSpan(['default' => 1, 'lg' => 2]),
@@ -204,6 +107,148 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                 ->columnSpan(1)
                 ->extraAttributes(['class' => 'lg:sticky lg:top-20 lg:self-start']),
         ]);
+    }
+
+    /** La forme du marqueur, sa taille et sa position. */
+    protected static function shapeSection(): Section
+    {
+        $percentTooltip = RawJs::make('`${Math.round($value)} %`');
+        $number = fn (mixed $state): float => is_numeric($state) ? (float) $state : 0;
+
+        return Section::make('Forme')
+            ->description('Le dessin du marqueur, sa taille et sa place par rapport à la position du point (la croix rouge de l’aperçu).')
+            ->columns(2)
+            ->schema([
+                Select::make('marker_style.shape')
+                    ->label('Forme')
+                    ->options(MarkerShapes::LABELS)
+                    ->default('pin')
+                    ->required()
+                    ->live(),
+                Select::make('marker_style.anchor')
+                    ->label('Ancrage')
+                    ->options([
+                        'center' => 'Centre',
+                        'bottom' => 'Bas (une pointe)',
+                        'top' => 'Haut',
+                        'left' => 'Gauche',
+                        'right' => 'Droite',
+                        'bottom-left' => 'Bas gauche',
+                        'bottom-right' => 'Bas droite',
+                        'top-left' => 'Haut gauche',
+                        'top-right' => 'Haut droite',
+                    ])
+                    ->placeholder('Celui de la forme')
+                    ->live()
+                    ->helperText('Le point de la forme posé sur la position. Vide : la pointe d’une épingle, le data-anchor d’un SVG, sinon le centre.'),
+                Textarea::make('marker_style.svg')
+                    ->label('SVG personnalisé')
+                    ->visible(fn (Get $get): bool => $get('marker_style.shape') === 'svg')
+                    // Gardé quand on essaie une autre forme : on peut y revenir sans le perdre.
+                    ->dehydratedWhenHidden()
+                    ->live(debounce: 600)
+                    ->helperText('Avec une viewBox. currentColor prend la couleur du point. La zone qui reçoit l’icône, l’image ou le texte est un circle, une ellipse ou un rect marqué data-slot (il n’est pas dessiné) ; sans elle, la forme reste seule. data-anchor="bottom" sur la balise svg pose sa base sur la position (centre par défaut). Scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
+                    ->rows(6)
+                    ->columnSpanFull(),
+                Slider::make('marker_style.size')
+                    ->label('Taille')
+                    ->range(MarkerShapes::MIN_PERCENT, MarkerShapes::MAX_PERCENT)
+                    ->step(5)
+                    ->default(100)
+                    ->tooltips($percentTooltip)
+                    ->formatStateUsing(fn (mixed $state): float => MarkerShapes::percent($state))
+                    ->live()
+                    ->helperText('En % de la taille standard : '.MarkerShapes::STANDARD_SIZE.' px sur le plus grand côté, celle de l’épingle. L’autre côté suit les proportions de la forme.')
+                    ->columnSpanFull(),
+                Slider::make('marker_style.rotation')
+                    ->label('Rotation')
+                    ->range(-180, 180)
+                    ->step(5)
+                    ->default(0)
+                    ->tooltips(RawJs::make('`${Math.round($value)}°`'))
+                    ->formatStateUsing($number)
+                    ->live()
+                    ->helperText('En degrés, autour de l’ancrage.')
+                    ->columnSpanFull(),
+                Slider::make('marker_style.offset.x')
+                    ->label('Décalage horizontal')
+                    ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
+                    ->step(5)
+                    ->default(0)
+                    ->tooltips($percentTooltip)
+                    ->formatStateUsing($number)
+                    ->live()
+                    ->helperText('En % de la largeur du marqueur, vers la droite : il suit la taille.'),
+                Slider::make('marker_style.offset.y')
+                    ->label('Décalage vertical')
+                    ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
+                    ->step(5)
+                    ->default(0)
+                    ->tooltips($percentTooltip)
+                    ->formatStateUsing($number)
+                    ->live()
+                    ->helperText('En % de sa hauteur, vers le bas.'),
+            ]);
+    }
+
+    /**
+     * Ce que montre la zone de contenu de la forme. Un encadré dit d'abord si la forme en a une (donc si une icône, une
+     * image ou un texte y sont possibles) ; chaque choix explique d'où vient ce qu'il montre ; seul le champ qui sert
+     * est affiché : l'icône (montrée aussi à défaut d'image), le texte, l'image par défaut.
+     */
+    protected static function contentSection(): Section
+    {
+        $hasSlot = fn (Get $get): bool => MarkerShapes::resolve((array) ($get('marker_style') ?? []))['slot'] !== null;
+        $content = fn (Get $get): ?string => $get('marker_style.content.type');
+
+        return Section::make('Contenu de la zone')
+            ->description('Ce que le marqueur montre à l’intérieur de sa forme : rien, une icône, une image ou un texte.')
+            ->schema([
+                Callout::make(fn (Get $get): string => $hasSlot($get)
+                    ? 'Cette forme a une zone de contenu : une icône, une image ou un texte y sont possibles.'
+                    : 'Cette forme n’a pas de zone de contenu : elle ne montre qu’elle-même.')
+                    ->description(fn (Get $get): string => $hasSlot($get)
+                        ? 'La zone est en pointillés dans l’aperçu agrandi.'
+                        : 'Pour y mettre une icône ou une image, marquez un circle, une ellipse ou un rect du SVG avec data-slot.')
+                    ->status(fn (Get $get): string => $hasSlot($get) ? 'info' : 'warning'),
+                Radio::make('marker_style.content.type')
+                    ->label('La zone montre')
+                    ->options([
+                        'none' => 'Rien : la forme seule',
+                        'icon' => 'Une icône',
+                        'image' => 'Une image (mini-vignette)',
+                        'text' => 'Un texte',
+                    ])
+                    ->descriptions([
+                        'none' => 'Le point n’est que sa forme et sa couleur.',
+                        'icon' => 'L’icône choisie ci-dessous. Un parcours peut la remplacer pour un point : dans le voyage, une période peut prendre la sienne.',
+                        'image' => 'L’image que le parcours donne au point — dans le voyage, l’image de une de l’étape, à défaut sa première photo —, sinon l’image par défaut ci-dessous. Sans aucune image, l’icône.',
+                        'text' => 'Un texte court, le même pour tous les points du type : un numéro, deux lettres.',
+                    ])
+                    ->default('icon')
+                    ->required()
+                    ->disableOptionWhen(fn (string $value, Get $get): bool => $value !== 'none' && ! $hasSlot($get))
+                    ->live(),
+                TextInput::make('icon')
+                    ->label(fn (Get $get): string => $content($get) === 'image' ? 'Icône, à défaut d’image' : 'Icône')
+                    ->visible(fn (Get $get): bool => in_array($content($get), ['icon', 'image'], true))
+                    ->dehydratedWhenHidden()
+                    ->live(onBlur: true)
+                    ->helperText('Ex : heroicon-o-map-pin.'),
+                TextInput::make('marker_style.content.value')
+                    ->label('Texte')
+                    ->visible(fn (Get $get): bool => $content($get) === 'text')
+                    ->dehydratedWhenHidden()
+                    ->maxLength(4)
+                    ->live(onBlur: true),
+                SpatieMediaLibraryFileUpload::make('default_marker_image')
+                    ->visible(fn (Get $get): bool => $content($get) === 'image')
+                    ->disabled(fn (): bool => ! MapPermissions::allows(static::class, 'attach-media'))
+                    ->label('Image par défaut')
+                    ->helperText('Montrée quand ni le point ni le parcours n’en donnent une.')
+                    ->collection(config('filament-map.media_collections.default_marker_image', 'default_marker_image'))
+                    ->image(),
+            ]);
     }
 
     public static function table(Table $table): Table
