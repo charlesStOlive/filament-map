@@ -42,6 +42,10 @@ return [
     | valeur ci-dessous. La clé vit dans le .env, et un changement de clé ne
     | demande pas de retoucher les couches.
     |
+    | Seules les entrées de cette liste sont lisibles par {key:…}. Elles partent
+    | dans le navigateur avec les cartes : n'y mettez que des clés publiques
+    | (restreintes à vos domaines chez le fournisseur), jamais une clé secrète.
+    |
     */
     'keys' => [
         'maptiler' => env('MAPTILER_API_KEY'),

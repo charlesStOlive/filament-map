@@ -27,7 +27,7 @@ Chaque couche est **vérifiée** à son enregistrement : l'application interroge
 
 Le bouton **Vérifier** (dans la liste, en tête de la fiche, ou sur plusieurs couches cochées) relance la vérification sans rien modifier : utile après un changement de clé chez le fournisseur. La commande `php artisan filament-map:check-layers` vérifie toutes les couches d'un coup.
 
-La vérification part du serveur. L'**aperçu**, lui, charge la couche dans le navigateur, comme une carte : il affiche « Chargement… », puis « Style chargé », ou l'erreur rencontrée (en rouge). Il suit le formulaire : inutile d'enregistrer pour voir l'effet d'une nouvelle URL.
+La vérification part du serveur. Elle n'interroge que des adresses publiques en `http(s)` : une adresse du réseau interne ou un fichier hors du dossier public est refusé. Une clé citée dans un message d'erreur y reste écrite `{key:…}`. L'**aperçu**, lui, charge la couche dans le navigateur, comme une carte : il affiche « Chargement… », puis « Style chargé », ou l'erreur rencontrée (en rouge). Il suit le formulaire : inutile d'enregistrer pour voir l'effet d'une nouvelle URL.
 
 ## Types de couche
 
@@ -55,6 +55,8 @@ https://serveur.example/{z}/{x}/{y}.png
 ```
 
 Si le fournisseur demande une clé (MapTiler, par exemple), ne l'écrivez pas dans la couche : mettez-la dans le fichier `.env` de l'application (`MAPTILER_API_KEY=…`) et citez-la dans l'URL par `{key:maptiler}`. Elle est remplacée à l'affichage, et un changement de clé ne demande pas de retoucher les couches.
+
+Seules les clés déclarées pour la cartographie (`filament-map.keys`) peuvent être citées ainsi : `{key:…}` ne donne accès à aucun autre réglage de l'application. Ces clés sont visibles dans le navigateur avec les cartes : choisissez chez le fournisseur une clé publique, restreinte aux domaines du site.
 
 ### Couches de données : URL
 

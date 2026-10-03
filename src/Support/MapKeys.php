@@ -6,6 +6,10 @@ namespace CharlesStOlive\FilamentMap\Support;
  * Les clés des fournisseurs de fonds de carte (`filament-map.keys`) : une couche cite « {key:maptiler} » sans porter la clé,
  * elle est remplacée à l'affichage. Une clé inconnue laisse une chaîne vide, l'URL échoue alors chez le fournisseur — d'où
  * `missing()`, que la vérification d'une couche signale.
+ *
+ * Seules les entrées de `filament-map.keys` sont lisibles : le nom cité n'admet ni point ni autre séparateur, il ne
+ * remonte donc jamais vers le reste de la configuration (APP_KEY, base de données, autres services). Ces clés partent
+ * dans le navigateur avec les cartes : elles doivent être des clés publiques, restreintes chez le fournisseur.
  */
 final class MapKeys
 {
@@ -66,11 +70,26 @@ final class MapKeys
      */
     public static function all(): array
     {
-        return array_filter(array_map('strval', (array) config('filament-map.keys', [])), 'filled');
+        $keys = array_filter((array) config('filament-map.keys', []), 'is_scalar');
+
+        return array_filter(array_map('strval', $keys), 'filled');
+    }
+
+    /** Remet « {key:…} » à la place des clés dans un texte gardé ou affiché (un message d'erreur qui cite l'URL). */
+    public static function redact(string $text): string
+    {
+        foreach (self::all() as $name => $value) {
+            $text = str_replace($value, '{key:'.$name.'}', $text);
+        }
+
+        return $text;
     }
 
     private static function value(string $name): ?string
     {
-        return config('filament-map.keys.'.strtolower($name));
+        $keys = (array) config('filament-map.keys', []);
+        $value = $keys[strtolower($name)] ?? null;
+
+        return is_scalar($value) ? (string) $value : null;
     }
 }

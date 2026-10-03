@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentMap\Services;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use CharlesStOlive\FilamentMap\Support\MapKeys;
 use CharlesStOlive\FilamentMap\Support\MapLayerCheck;
+use CharlesStOlive\FilamentMap\Support\UnsafeMapSourceUrl;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -38,6 +39,14 @@ class MapLayerChecker
 
     public function check(MapLayer $layer): MapLayerCheck
     {
+        $check = $this->runCheck($layer);
+
+        // Un message peut citer l'URL appelée : la clé n'y reste pas en clair.
+        return new MapLayerCheck($check->status, MapKeys::redact($check->message));
+    }
+
+    protected function runCheck(MapLayer $layer): MapLayerCheck
+    {
         try {
             return match ($layer->renderType()) {
                 'style' => $this->checkStyle($layer),
@@ -47,6 +56,8 @@ class MapLayerChecker
                 'custom' => MapLayerCheck::warning('Couche personnalisée : son rendu dépend du projet, elle n’est pas vérifiée automatiquement.'),
                 default => MapLayerCheck::error('Type de couche inconnu : « '.$layer->type.' ».'),
             };
+        } catch (UnsafeMapSourceUrl $exception) {
+            return MapLayerCheck::error($exception->getMessage());
         } catch (ConnectionException $exception) {
             return MapLayerCheck::error('Adresse injoignable : '.Str::limit($exception->getMessage(), 160));
         } catch (Throwable $exception) {
@@ -233,6 +244,10 @@ class MapLayerChecker
         $url = MapKeys::resolve($url);
 
         if ($local = $this->localPublicFile($url)) {
+            if (! $this->isInsidePublic($local)) {
+                return [null, null, MapLayerCheck::error('Adresse refusée : elle sort du dossier public de l’application.')];
+            }
+
             return is_file($local)
                 ? [file_get_contents($local), null, null]
                 : [null, null, MapLayerCheck::error("Le fichier « {$url} » est introuvable dans le dossier public.")];
@@ -258,6 +273,17 @@ class MapLayerChecker
         return $path === null ? null : public_path(ltrim(Str::before($path, '?'), '/'));
     }
 
+    protected function isInsidePublic(string $path): bool
+    {
+        $public = realpath(public_path());
+        $real = realpath($path);
+
+        // Un fichier absent ne se lit pas : seul compte qu'un chemin existant reste dans public/.
+        return $real === false
+            ? ! str_contains($path, '..')
+            : $public !== false && str_starts_with($real, $public.DIRECTORY_SEPARATOR);
+    }
+
     protected function missingKeys(string $url): ?MapLayerCheck
     {
         $missing = MapKeys::missing($url);
@@ -273,9 +299,53 @@ class MapLayerChecker
 
     protected function fetch(string $url): Response
     {
+        $this->guardUrl($url);
+
         return Http::timeout(10)
+            ->withOptions(['allow_redirects' => [
+                'max' => 3,
+                'protocols' => ['http', 'https'],
+                'on_redirect' => fn ($request, $response, $uri) => $this->guardUrl((string) $uri),
+            ]])
             ->withHeaders(['Origin' => rtrim((string) config('app.url'), '/'), 'Accept' => '*/*'])
             ->get($url);
+    }
+
+    /**
+     * Le serveur n'appelle que des adresses publiques en http(s) : une couche ne doit pas lui faire interroger le réseau
+     * interne (base de données, services du conteneur, métadonnées d'hébergeur). Vaut aussi pour chaque redirection.
+     */
+    protected function guardUrl(string $url): void
+    {
+        $parts = parse_url($url);
+        $scheme = strtolower($parts['scheme'] ?? '');
+        $host = trim($parts['host'] ?? '', '[]');
+
+        if (! in_array($scheme, ['http', 'https'], true) || $host === '') {
+            throw new UnsafeMapSourceUrl('Adresse refusée : seules les adresses http:// ou https:// complètes sont vérifiées.');
+        }
+
+        $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : $this->resolveHost($host);
+
+        foreach ($ips as $ip) {
+            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                throw new UnsafeMapSourceUrl('Adresse refusée : elle mène au réseau interne ('.$host.'), le serveur ne l’interroge pas.');
+            }
+        }
+    }
+
+    /** @return array<int, string> */
+    protected function resolveHost(string $host): array
+    {
+        $ips = gethostbynamel($host) ?: [];
+
+        foreach (@dns_get_record($host, DNS_AAAA) ?: [] as $record) {
+            if (isset($record['ipv6'])) {
+                $ips[] = $record['ipv6'];
+            }
+        }
+
+        return $ips;
     }
 
     protected function httpError(Response $response, string $subject = 'L’adresse'): MapLayerCheck
