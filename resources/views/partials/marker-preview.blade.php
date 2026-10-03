@@ -4,8 +4,10 @@
     poserait — ancrage, décalage, rotation —, le dessin réel centré. `$compact` : la seule taille réelle, pour la liste
     des types.
 
-    L'image d'exemple choisie est gardée pour la session (sessionStorage) : l'aperçu est redessiné à chaque saisie,
-    `wire:key` changeant avec lui.
+    Le marqueur est posé par le JS, pas par le serveur : `wire:ignore` empêche Livewire de remettre une fenêtre vide
+    quand il réaffiche la page sans que l'aperçu change (à l'enregistrement, par exemple). Quand il change, `wire:key`
+    change avec lui : Livewire remplace tout l'aperçu, qui se redessine. L'image d'exemple choisie est gardée pour la
+    session (sessionStorage).
 --}}
 @php
     $compact ??= false;
@@ -19,6 +21,7 @@
 
 <div
     wire:key="filament-map-marker-preview-{{ md5(json_encode($preview)) }}"
+    wire:ignore
     x-data="{
         appearances: @js($preview['appearances']),
         {{-- Dans la liste, l'image du type quand il en a une : c'est elle qu'il montre à défaut. --}}
