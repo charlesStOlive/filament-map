@@ -22,7 +22,7 @@
             loading: false,
             request: 0,
             open() {
-                $dispatch('open-modal', { id: @js($modalId) })
+                this.$dispatch('open-modal', { id: @js($modalId) })
                 this.load()
             },
             async load() {
@@ -46,7 +46,7 @@
             pick(icon) {
                 this.state = icon.name
                 this.svg = icon.svg
-                $dispatch('close-modal', { id: @js($modalId) })
+                this.$dispatch('close-modal', { id: @js($modalId) })
             },
             clear() {
                 this.state = null

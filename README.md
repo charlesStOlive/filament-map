@@ -93,9 +93,11 @@ résultats au plus. Le catalogue est servi en JSON par la route `filament-map.ic
 `web` et `auth` par défaut) ; la liste des fichiers est gardée un jour en cache (`filament-map.icon-catalog`).
 L'état est le nom de l'icône ; `->clearable(false)`, `->emptyLabel('…')`.
 
-**Choisir un type** : `GeoPointTypePicker::make('…')` est le Radio de Filament rendu en cartes carrées, comme
-`MapScenePicker` pour les scènes (deux fois plus petites) : le marqueur de chaque type actif en taille réelle, son nom,
-« Avec image » s'il en accepte une. `->query()` change la requête, `->columns()` le nombre de cartes par ligne.
+**Choisir un type** : `GeoPointTypePicker::make('…')` montre le type choisi (son marqueur, son nom, ce qu'il montre)
+et ouvre un popup de cartes carrées (comme `MapScenePicker`, deux fois plus petites) : recherche par nom, filtre par
+contenu (icône, image, texte, forme seule), classement par ordre, nom ou taille. L'état est l'identifiant du type ;
+un type inactif ou hors de `->query()` est refusé. `->placeholder('…')` permet de ne rien choisir,
+`->placeholderType($id)` montre alors le type qui s'appliquera ; `->columns()` règle les cartes par ligne du popup.
 
 ## Saisir une position : `MapPositionInput`
 
