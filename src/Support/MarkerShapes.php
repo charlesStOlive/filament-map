@@ -30,19 +30,21 @@ final class MarkerShapes
         'svg' => 'SVG personnalisé',
     ];
 
-    /** Le plus grand côté d'un marqueur dont la taille n'est pas réglée, en px : l'épingle mesure 30 × 40. */
-    public const DEFAULT_SIZE = 40;
+    /** La taille standard : le plus grand côté d'un marqueur à 100 %, en px (l'épingle mesure 30 × 40). */
+    public const STANDARD_SIZE = 40;
 
-    /** Les côtés par défaut des formes fournies, quand leur proportion ne suffit pas (le cercle est plus petit). */
-    private const DEFAULT_SIZES = ['pin' => [30, 40], 'circle' => [34, 34], 'star' => [34, 34]];
+    /** Les bornes de la taille, en % de la taille standard. */
+    public const MIN_PERCENT = 20;
+
+    public const MAX_PERCENT = 300;
 
     /**
-     * La forme d'un style de marqueur, lue (voir MarkerSvg::shape()), avec son nom et sa taille en px : celle du style,
-     * sinon celle de la forme ; une largeur seule garde les proportions. Un SVG personnalisé illisible laisse place à
-     * l'épingle.
+     * La forme d'un style de marqueur, lue (voir MarkerSvg::shape()), avec son nom et sa taille en px : son plus grand
+     * côté est la taille standard multipliée par `size` (un pourcentage, 100 par défaut), l'autre suit les proportions
+     * de la forme. Un SVG personnalisé illisible laisse place à l'épingle.
      *
      * @param  array<string, mixed>  $style  Le `marker_style` d'un type ou d'un point.
-     * @return array{name: string, svg: string, ratio: float, slot: array<string, float|string>|null, anchor: string, width: float, height: float}
+     * @return array{name: string, svg: string, ratio: float, slot: array<string, float|string>|null, anchor: string, width: float, height: float, percent: float}
      */
     public static function resolve(array $style): array
     {
@@ -54,21 +56,30 @@ final class MarkerShapes
             $shape = MarkerSvg::shape(self::BUILT_IN[$name]);
         }
 
-        [$defaultWidth, $defaultHeight] = self::DEFAULT_SIZES[$name] ?? ($shape['ratio'] >= 1
-            ? [self::DEFAULT_SIZE, self::DEFAULT_SIZE / $shape['ratio']]
-            : [self::DEFAULT_SIZE * $shape['ratio'], self::DEFAULT_SIZE]);
+        $percent = self::percent($style['size'] ?? null, $shape['ratio']);
+        $side = self::STANDARD_SIZE * $percent / 100;
+        [$width, $height] = $shape['ratio'] >= 1 ? [$side, $side / $shape['ratio']] : [$side * $shape['ratio'], $side];
 
-        $width = (float) ($style['size']['width'] ?? 0);
-        $height = (float) ($style['size']['height'] ?? 0);
+        return ['name' => $name, ...$shape, 'width' => round($width, 2), 'height' => round($height, 2), 'percent' => $percent];
+    }
 
-        if ($width > 0 && $height <= 0) {
-            $height = $width / $shape['ratio'];
-        } elseif ($height > 0 && $width <= 0) {
-            $width = $height * $shape['ratio'];
-        } elseif ($width <= 0) {
-            [$width, $height] = [$defaultWidth, $defaultHeight];
+    /**
+     * La taille en % : un nombre, borné. Une taille d'avant les pourcentages (`['width' => …, 'height' => …]` en px)
+     * devient le pourcentage de son plus grand côté.
+     */
+    public static function percent(mixed $size, float $ratio = 1.0): float
+    {
+        if (is_array($size)) {
+            $width = (float) ($size['width'] ?? 0);
+            $height = (float) ($size['height'] ?? 0);
+            $side = max($width, $height, $width > 0 && $height <= 0 ? $width / $ratio : 0, $height > 0 && $width <= 0 ? $height * $ratio : 0);
+            $size = $side > 0 ? 100 * $side / self::STANDARD_SIZE : null;
         }
 
-        return ['name' => $name, ...$shape, 'width' => round($width, 2), 'height' => round($height, 2)];
+        if (! is_numeric($size)) {
+            return 100.0;
+        }
+
+        return (float) max(self::MIN_PERCENT, min(self::MAX_PERCENT, round((float) $size)));
     }
 }

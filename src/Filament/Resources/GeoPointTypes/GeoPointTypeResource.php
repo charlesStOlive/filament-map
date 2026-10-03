@@ -14,6 +14,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Slider;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use CharlesStOlive\FilamentMap\Support\MapPermissions;
 use CharlesStOlive\FilamentMap\Support\MarkerShapes;
@@ -31,6 +32,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
 use Guava\FilamentKnowledgeBase\Contracts\HasKnowledgeBase;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -125,15 +127,16 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                             ->helperText(fn (Get $get): string => $get('content.type') === 'text'
                                 ? 'Court : un numéro, deux lettres.'
                                 : 'Laissée vide, l’icône du type.'),
-                        TextInput::make('size.width')
-                            ->label('Largeur (px)')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        TextInput::make('size.height')
-                            ->label('Hauteur (px)')
-                            ->numeric()
-                            ->live(onBlur: true)
-                            ->helperText('Laissées vides, la taille de la forme ; une seule garde ses proportions.'),
+                        Slider::make('size')
+                            ->label('Taille')
+                            ->range(MarkerShapes::MIN_PERCENT, MarkerShapes::MAX_PERCENT)
+                            ->step(5)
+                            ->default(100)
+                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
+                            ->formatStateUsing(fn (mixed $state): float => MarkerShapes::percent($state))
+                            ->live()
+                            ->helperText('En % de la taille standard : '.MarkerShapes::STANDARD_SIZE.' px sur le plus grand côté, celle de l’épingle. L’autre côté suit les proportions de la forme.')
+                            ->columnSpanFull(),
                         KeyValue::make('css')
                             ->label('Variables de style')
                             ->live(onBlur: true)

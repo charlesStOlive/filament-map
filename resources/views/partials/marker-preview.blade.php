@@ -61,7 +61,7 @@
         <div class="flex flex-wrap items-center gap-2">
             <x-filament::badge :color="$status['color']">{{ $status['label'] }}</x-filament::badge>
             <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ rtrim(rtrim(number_format($size['width'], 1, ',', ''), '0'), ',') }} × {{ rtrim(rtrim(number_format($size['height'], 1, ',', ''), '0'), ',') }} px,
+                {{ (int) $size['percent'] }} % : {{ rtrim(rtrim(number_format($size['width'], 1, ',', ''), '0'), ',') }} × {{ rtrim(rtrim(number_format($size['height'], 1, ',', ''), '0'), ',') }} px,
                 ancré {{ \CharlesStOlive\FilamentMap\Support\MarkerPreview::anchorLabel($preview['anchor']) }}
             </span>
         </div>

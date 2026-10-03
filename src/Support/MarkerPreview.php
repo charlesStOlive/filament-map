@@ -74,7 +74,7 @@ final class MarkerPreview
             'appearances' => $appearances,
             'default' => $default,
             'anchor' => $shape['anchor'],
-            'size' => ['width' => $shape['width'], 'height' => $shape['height']],
+            'size' => ['width' => $shape['width'], 'height' => $shape['height'], 'percent' => $shape['percent']],
         ];
     }
 

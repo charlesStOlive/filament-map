@@ -57,9 +57,9 @@ Quand le type accepte une image, des **images d'exemple** (carrée, paysage, por
 
 Seul un type dont le contenu est **Image**, et dont la forme a une zone de contenu, montre une image. Un parcours peut proposer une image à tous ses points (l'image de une d'une étape, par exemple) : les points d'un type qui n'est qu'une forme ou une icône l'ignorent simplement, sans erreur. On peut donc changer le type des points d'un parcours sans rien changer d'autre.
 
-### Dimensions et CSS
+### Taille et CSS
 
-La largeur et la hauteur fixent la taille du marqueur. Les variables CSS permettent des ajustements avancés. Testez toujours le résultat à plusieurs niveaux de zoom et sur un petit écran.
+Tous les marqueurs partagent une **taille standard** : 40 px sur leur plus grand côté, celle de l'épingle (30 × 40). Le curseur **Taille** la règle en pourcentage : 100 % la garde, 60 % fait un point plus discret, 150 % un point plus visible. L'autre côté suit les proportions de la forme. Les variables CSS permettent des ajustements avancés. Testez toujours le résultat à plusieurs niveaux de zoom et sur un petit écran.
 
 ### SVG personnalisé
 
@@ -83,7 +83,7 @@ Exemple, une vignette façon polaroïd qui pointe vers le bas :
 
 Les formes fournies (épingle, cercle, étoile) sont écrites de la même façon : elles ont toutes une zone de contenu.
 
-Sans taille réglée, le marqueur mesure 40 px sur son plus grand côté, dans les proportions de sa `viewBox` (l'épingle 30 × 40, le cercle et l'étoile 34 × 34). Une largeur seule garde les proportions.
+Sa taille suit la même règle que les autres formes : la taille standard, en pourcentage, dans les proportions de sa `viewBox`.
 
 ## Image du point
 

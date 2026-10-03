@@ -63,7 +63,9 @@ celles fournies (`Support\MarkerShapes::BUILT_IN` : épingle, cercle, étoile) c
 `Support\MarkerSvg`. Le SVG désigne sa **zone de contenu** par un `circle`, une `ellipse` ou un `rect` marqué
 `data-slot` (traduite en % : `slot`), et son **ancrage** par `data-anchor` sur sa racine. L'image, l'icône (déjà rendue
 en SVG côté serveur) ou le texte se posent dans la zone ; sans zone, la forme reste seule. Rien n'y lève d'erreur : ce
-qui manque se rabat sur l'icône, puis sur la forme seule ; un SVG illisible, sur l'épingle.
+qui manque se rabat sur l'icône, puis sur la forme seule ; un SVG illisible, sur l'épingle. La taille est un pourcentage (`marker_style.size`)
+d'une taille standard, `MarkerShapes::STANDARD_SIZE` (40 px sur le plus grand côté) ; une taille d'avant en px
+(`['width' => …, 'height' => …]`) est lue comme le pourcentage de son plus grand côté.
 
 Un consommateur (un parcours, une application) peut :
 
