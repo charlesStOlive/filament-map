@@ -7,6 +7,8 @@ use CharlesStOlive\FilamentMap\Commands\InstallFilamentMapCommand;
 use CharlesStOlive\FilamentMap\Livewire\MapViewer;
 use CharlesStOlive\FilamentMap\Services\Geocoding\Geocoder;
 use CharlesStOlive\FilamentMap\Services\Geocoding\NominatimGeocoder;
+use CharlesStOlive\FilamentMap\Http\Controllers\IconCatalogController;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -38,6 +40,10 @@ class FilamentMapServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         Livewire::component('filament-map-viewer', MapViewer::class);
+
+        Route::middleware(config('filament-map.icons.middleware', ['web', 'auth']))
+            ->get('filament-map/icons', IconCatalogController::class)
+            ->name('filament-map.icons');
 
         $this->publishes([
             __DIR__.'/../resources/js' => public_path('vendor/filament-map'),

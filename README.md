@@ -86,6 +86,13 @@ Un point sans `appearance` garde le marqueur par défaut de MapLibre.
 pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la liste des types (`compact`) et au choix d'un type
 (`tile`).
 
+**Choisir une icône** : `IconPicker::make('icon')` montre l'icône choisie et ouvre un popup qui parcourt
+`Support\IconCatalog` — les jeux Blade Icons de l'application, Heroicons rangé par variante, Font Awesome par jeu
+(`filament-map.icons.groups`), sans ceux de Filament (`exclude_sets`) — avec recherche par mots et filtre par jeu, 240
+résultats au plus. Le catalogue est servi en JSON par la route `filament-map.icons` (`filament-map.icons.middleware`,
+`web` et `auth` par défaut) ; la liste des fichiers est gardée un jour en cache (`filament-map.icon-catalog`).
+L'état est le nom de l'icône ; `->clearable(false)`, `->emptyLabel('…')`.
+
 **Choisir un type** : `GeoPointTypePicker::make('…')` est le Radio de Filament rendu en cartes carrées, comme
 `MapScenePicker` pour les scènes (deux fois plus petites) : le marqueur de chaque type actif en taille réelle, son nom,
 « Avec image » s'il en accepte une. `->query()` change la requête, `->columns()` le nombre de cartes par ligne.

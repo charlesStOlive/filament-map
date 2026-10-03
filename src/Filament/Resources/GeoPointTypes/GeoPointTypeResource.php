@@ -3,6 +3,7 @@
 namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\BelongsToConfiguredMapCluster;
+use CharlesStOlive\FilamentMap\Filament\Forms\Components\IconPicker;
 use CharlesStOlive\FilamentMap\Filament\Forms\Components\MarkerPreview;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\CreateGeoPointType;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages\EditGeoPointType;
@@ -229,12 +230,11 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                     ->required()
                     ->disableOptionWhen(fn (string $value, Get $get): bool => $value !== 'none' && ! $hasSlot($get))
                     ->live(),
-                TextInput::make('icon')
+                IconPicker::make('icon')
                     ->label(fn (Get $get): string => $content($get) === 'image' ? 'Icône, à défaut d’image' : 'Icône')
                     ->visible(fn (Get $get): bool => in_array($content($get), ['icon', 'image'], true))
                     ->dehydratedWhenHidden()
-                    ->live(onBlur: true)
-                    ->helperText('Ex : heroicon-o-map-pin.'),
+                    ->live(),
                 TextInput::make('marker_style.content.value')
                     ->label('Texte')
                     ->visible(fn (Get $get): bool => $content($get) === 'text')

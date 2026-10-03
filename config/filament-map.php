@@ -106,6 +106,33 @@ return [
         'content_type' => 'icon',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Icônes (IconPicker)
+    |--------------------------------------------------------------------------
+    |
+    | Le catalogue lit les jeux Blade Icons de l'application. `groups` range les
+    | icônes dont le nom commence par une de ces clés (les variantes
+    | d'Heroicons, les jeux Font Awesome), dans cet ordre ; un autre jeu forme
+    | un groupe à lui, nommé par son préfixe. `exclude_sets` écarte
+    | des jeux (ceux de Filament, internes). `middleware` protège la route du
+    | catalogue.
+    |
+    */
+    'icons' => [
+        'groups' => [
+            'heroicon-o' => 'Heroicons — contour',
+            'heroicon-s' => 'Heroicons — plein',
+            'heroicon-m' => 'Heroicons — mini',
+            'heroicon-c' => 'Heroicons — micro',
+            'fas' => 'Font Awesome — plein',
+            'far' => 'Font Awesome — contour',
+            'fab' => 'Font Awesome — marques',
+        ],
+        'exclude_sets' => ['filament'],
+        'middleware' => ['web', 'auth'],
+    ],
+
     'clustering' => [
         'enabled' => false,
         'max_zoom' => 14,

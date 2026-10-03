@@ -56,7 +56,7 @@ La section **Contenu de la zone** commence par dire si la forme en a une : les f
 La zone montre :
 
 - **Rien** : le point n'est que sa forme et sa couleur.
-- **Une icône** : celle du champ **Icône** (par exemple `heroicon-o-map-pin`). Un parcours peut la remplacer pour un point : dans le voyage, une période peut prendre la sienne.
+- **Une icône** : celle du champ **Icône**. Son bouton **Choisir…** ouvre un popup qui parcourt toutes les icônes de l'application : cherchez par nom (en anglais : `map`, `camera`, `plane`…), filtrez par jeu (Heroicons en contour, plein, mini ou micro ; Font Awesome), puis cliquez sur l'icône. Un parcours peut la remplacer pour un point : dans le voyage, une période peut prendre la sienne.
 - **Une image (mini-vignette)** : celle que le parcours donne au point — dans le voyage, l'image de une de l'étape, à défaut sa première photo —, sinon l'**image par défaut** du type. Sans aucune image, le point montre l'icône du champ **Icône, à défaut d'image**. L'image elle-même ne se choisit pas point par point : c'est le parcours qui la fournit.
 - **Un texte** : court (4 caractères au plus), le même pour tous les points du type, par exemple un numéro.
 
