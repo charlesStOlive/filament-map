@@ -40,8 +40,10 @@ Un type de point est un modèle d'apparence réutilisable. Il permet de garantir
 
 - **Aucun** : seule la forme est affichée.
 - **Icône** : affiche une icône dans le marqueur.
-- **Image** : utilise une image de la médiathèque.
+- **Image** : une mini-vignette ronde dans le marqueur (voir *Image du point* ci-dessous).
 - **Texte** : affiche une valeur courte, par exemple un numéro d'étape.
+
+Seul un type dont le contenu est **Image** montre une image. Un parcours peut proposer une image à tous ses points (l'image de une d'une étape, par exemple) : les points d'un type qui n'est qu'une forme ou une icône l'ignorent simplement, sans erreur. On peut donc changer le type des points d'un parcours sans rien changer d'autre.
 
 ### Dimensions et CSS
 
@@ -49,11 +51,17 @@ La largeur et la hauteur fixent la taille du marqueur. Les variables CSS permett
 
 ### SVG personnalisé
 
-Le SVG convient à une identité visuelle spécifique. Utilisez un dessin simple, avec une `viewBox` correcte. Le rendu est nettoyé avant affichage ; les scripts ou contenus dangereux ne sont pas acceptés.
+Le SVG convient à une identité visuelle spécifique. Utilisez un dessin simple, avec une `viewBox` correcte, et `currentColor` pour ce qui doit prendre la couleur du point. Le rendu est nettoyé avant affichage : les scripts, contenus embarqués et liens externes sont retirés. Un SVG illisible est remplacé par l'épingle.
 
-## Image par défaut
+## Image du point
 
-L'image du type est utilisée lorsque le point ne possède pas sa propre image. Elle est particulièrement utile avec un contenu de type **Image**.
+Avec un contenu **Image**, le marqueur prend la première image disponible :
+
+1. l'image propre au point ;
+2. l'image que le parcours lui propose (par exemple l'image de une de l'étape) ;
+3. l'image par défaut du type.
+
+Sans aucune image, il montre l'icône du type ; sans icône, la forme seule.
 
 ## Modifier un type existant
 

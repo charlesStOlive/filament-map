@@ -55,6 +55,24 @@ En mode scène, fournir ou remplacer des couches externes est refusé. Les ancie
 
 Voir [les scènes cartographiques](docs/knowledge-base/map/scenes.md).
 
+## Apparence des points
+
+`MapPayloadBuilder::point()` prépare `appearance` (forme, contenu, couleur, taille, variables CSS), que
+`resources/js/layers/marker-layer.js` dessine : épingle, cercle, étoile ou SVG nettoyé (`Support\MarkerSvg`), avec une
+icône (déjà rendue en SVG côté serveur), une image ou un texte. Rien n'y lève d'erreur : ce qui manque se rabat sur
+l'icône, puis sur la forme seule.
+
+Un consommateur (un parcours, une application) peut :
+
+- **proposer une image** : `point($point, image: $url)`. Elle passe après l'image propre au point et avant celle du
+  type, et n'est montrée que si le type l'accepte (`GeoPointType::acceptsImage()`, contenu « Image ») ; sinon elle est
+  ignorée ;
+- **donner sa couleur** au point sans créer de type : l'option `color` du point (`options.color`) l'emporte sur celle du
+  type ;
+- passer des options MapLibre par `options.marker` (`className`, `anchor`, `offset`…) ; `scale` y agrandit le dessin.
+
+Un point sans `appearance` garde le marqueur par défaut de MapLibre.
+
 ## Saisir une position : `MapPositionInput`
 
 Un composant de formulaire pour une **position sur la carte** et les réglages qui

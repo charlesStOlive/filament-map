@@ -40,6 +40,21 @@ class GeoPointType extends Model implements HasMedia
         return config('filament-map.tables.geo_point_types', parent::getTable());
     }
 
+    /** Ce que le marqueur montre dans sa forme : `none`, `icon`, `image` ou `text` (réglage du type, sinon du plugin). */
+    public function contentType(): string
+    {
+        return $this->marker_style['content']['type'] ?? config('filament-map.markers.content_type', 'icon');
+    }
+
+    /**
+     * Le point de ce type montre-t-il une image (une mini-vignette) ? Seulement si son contenu est « Image ». Une image
+     * qu'on lui propose (MapPayloadBuilder::point()) est sinon ignorée : un type qui n'est qu'une forme reste une forme.
+     */
+    public function acceptsImage(): bool
+    {
+        return $this->contentType() === 'image';
+    }
+
     public function points(): HasMany
     {
         return $this->hasMany(GeoPoint::class);

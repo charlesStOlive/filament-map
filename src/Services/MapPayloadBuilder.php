@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use CharlesStOlive\FilamentMap\Models\MapScene;
 use CharlesStOlive\FilamentMap\Support\MapKeys;
+use CharlesStOlive\FilamentMap\Support\MarkerSvg;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -159,7 +160,13 @@ class MapPayloadBuilder
         return null;
     }
 
-    public function point(GeoPoint $point): array
+    /**
+     * @param  string|null  $image  Une image que l'appelant propose au point (une application, un parcours : l'image
+     *                              de une d'une étape, par exemple). Elle passe après l'image propre au point et avant
+     *                              celle de son type, et ne sert que si le contenu du marqueur est « Image » : ailleurs,
+     *                              elle est ignorée.
+     */
+    public function point(GeoPoint $point, ?string $image = null): array
     {
         $pivot = $point->pivot;
         $type = $point->type;
@@ -169,7 +176,7 @@ class MapPayloadBuilder
             $this->pivotJson($pivot?->marker_style),
         );
         $options = array_replace_recursive($point->options ?? [], $this->pivotJson($pivot?->options));
-        $image = $this->markerImage($point);
+        $image = $this->markerImage($point, $image);
         $icon = $options['icon'] ?? $type?->icon;
         $color = $options['color'] ?? $type?->color;
 
@@ -201,21 +208,36 @@ class MapPayloadBuilder
         ];
     }
 
+    /**
+     * Ce que le navigateur dessine (resources/js/layers/marker-layer.js). Tout y est prêt à l'emploi : l'icône est déjà
+     * son SVG (`content.html`), la forme personnalisée est nettoyée. Ce qui manque se rabat sans erreur : un contenu
+     * « Image » sans image montre l'icône, une icône inconnue rien, une forme SVG illisible l'épingle.
+     */
     protected function pointAppearance(array $style, ?string $icon, ?string $image, ?string $color): array
     {
         $content = is_array($style['content'] ?? null) ? $style['content'] : [];
-        $contentType = $content['type'] ?? config('filament-map.markers.content_type', 'icon');
+        $declared = $content['type'] ?? config('filament-map.markers.content_type', 'icon');
+        $contentType = $declared === 'image' && blank($image) ? 'icon' : $declared;
         $contentValue = match ($contentType) {
             'image' => $image,
-            'icon' => $content['value'] ?? $icon,
+            // La valeur saisie est le nom de l'icône quand le contenu est « Icône » ; sinon, celle du point ou du type.
+            'icon' => $declared === 'icon' && filled($content['value'] ?? null) ? $content['value'] : $icon,
             'text' => $content['value'] ?? null,
             default => null,
         };
+        $html = $contentType === 'icon' ? MarkerSvg::icon($contentValue) : null;
+
+        if (blank($contentValue) || ($contentType === 'icon' && $html === null)) {
+            [$contentType, $contentValue] = ['none', null];
+        }
+
+        $shape = $style['shape'] ?? config('filament-map.markers.shape', 'pin');
+        $svg = $shape === 'svg' ? MarkerSvg::sanitize($style['svg'] ?? null) : null;
 
         return [
-            'shape' => $style['shape'] ?? config('filament-map.markers.shape', 'pin'),
-            'svg' => $style['svg'] ?? null,
-            'content' => ['type' => $contentType, 'value' => $contentValue],
+            'shape' => $shape === 'svg' && $svg === null ? 'pin' : $shape,
+            'svg' => $svg,
+            'content' => ['type' => $contentType, 'value' => $contentValue, 'html' => $html],
             'color' => $color,
             'size' => is_array($style['size'] ?? null) ? $style['size'] : [],
             'css' => is_array($style['css'] ?? null) ? $style['css'] : [],
@@ -247,11 +269,12 @@ class MapPayloadBuilder
         return [];
     }
 
-    protected function markerImage(GeoPoint $point): ?string
+    /** L'image du marqueur : celle du point, sinon celle que l'appelant propose, sinon celle de son type. */
+    protected function markerImage(GeoPoint $point, ?string $proposed = null): ?string
     {
         $collection = config('filament-map.media_collections.marker_image', 'marker_image');
         $typeCollection = config('filament-map.media_collections.default_marker_image', 'default_marker_image');
 
-        return $point->getFirstMediaUrl($collection) ?: $point->type?->getFirstMediaUrl($typeCollection) ?: null;
+        return $point->getFirstMediaUrl($collection) ?: $proposed ?: $point->type?->getFirstMediaUrl($typeCollection) ?: null;
     }
 }

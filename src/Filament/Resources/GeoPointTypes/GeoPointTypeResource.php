@@ -99,12 +99,12 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                         ->required(),
                     Textarea::make('svg')
                         ->label('SVG personnalise')
-                        ->helperText('Le SVG devra etre nettoye avant son rendu dans le navigateur.')
+                        ->helperText('Peint de la couleur du point (currentColor). Il est nettoyé avant son rendu : scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
                         ->rows(6)
                         ->columnSpanFull(),
                     TextInput::make('content.value')
                         ->label('Icone ou texte')
-                        ->helperText('Pour une image, la collection Media Library du type sera utilisee.'),
+                        ->helperText('Pour une image : celle du point, sinon celle qu’un parcours lui propose (l’image de une d’une étape, par exemple), sinon l’image du type ci-dessous. Sans aucune, le point montre son icône.'),
                     TextInput::make('size.width')
                         ->label('Largeur')
                         ->numeric(),
