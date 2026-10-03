@@ -1,8 +1,9 @@
 {{--
     L'aperçu d'un marqueur (Support\MarkerPreview::for()) : dessiné par resources/js/layers/marker-element.js, le code
     de la carte, et posé dans chaque scène (`data-marker-stage`) par resources/js/marker-preview.js, comme MapLibre le
-    poserait — ancrage, décalage, rotation —, le dessin réel centré. `$compact` : la seule taille réelle, pour la liste
-    des types.
+    poserait — ancrage, décalage, rotation —, le dessin réel centré. `$variant` : `form` (le formulaire d'un type),
+    `compact` (la taille réelle et le statut, pour la liste des types) ou `tile` (une fenêtre carrée seule, pour
+    GeoPointTypePicker).
 
     Le marqueur est posé par le JS, pas par le serveur : `wire:ignore` empêche Livewire de remettre une fenêtre vide
     quand il réaffiche la page sans que l'aperçu change (à l'enregistrement, par exemple). Quand il change, `wire:key`
@@ -10,7 +11,8 @@
     session (sessionStorage).
 --}}
 @php
-    $compact ??= false;
+    $variant ??= ($compact ?? false) ? 'compact' : 'form';
+    $compact = $variant !== 'form';
     $file = public_path('vendor/filament-map/marker-preview.js');
     $moduleUrl = asset('vendor/filament-map/marker-preview.js') . (is_file($file) ? '?v=' . filemtime($file) : '');
     $status = $preview['status'];
@@ -24,7 +26,7 @@
     wire:ignore
     x-data="{
         appearances: @js($preview['appearances']),
-        {{-- Dans la liste, l'image du type quand il en a une : c'est elle qu'il montre à défaut. --}}
+        {{-- Hors du formulaire, l'image du type quand il en a une : c'est elle qu'il montre à défaut. --}}
         sample: @js($compact && isset($preview['appearances']['type']) ? 'type' : $preview['default']),
         draw: null,
         async init() {
@@ -40,6 +42,9 @@
                 outlineSlot: stage.dataset.outline === '1',
             }))
             this.draw()
+            // Caché au chargement (un onglet, une fenêtre), l'aperçu n'a pas encore de taille : il se redessine dès
+            // qu'il en a une, et quand elle change.
+            new ResizeObserver(() => this.draw()).observe(this.$root)
         },
         choose(key) {
             this.sample = key
@@ -47,9 +52,13 @@
             this.draw?.()
         },
     }"
-    @class(['flex flex-col gap-3' => ! $compact, 'flex items-center gap-2' => $compact])
+    @class(['flex flex-col gap-3' => $variant === 'form', 'flex items-center gap-2' => $variant === 'compact'])
 >
-    @if ($compact)
+    @if ($variant === 'tile')
+        <div data-marker-stage class="relative aspect-square w-full overflow-hidden" style="{{ $light }}">
+            <div data-marker-holder></div>
+        </div>
+    @elseif ($variant === 'compact')
         <div data-marker-stage class="relative size-14 shrink-0 overflow-hidden rounded-md" style="{{ $light }}">
             <div data-marker-holder></div>
         </div>

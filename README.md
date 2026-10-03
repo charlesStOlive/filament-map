@@ -83,7 +83,12 @@ Un point sans `appearance` garde le marqueur par défaut de MapLibre.
 **Aperçu** : `Filament\Forms\Components\MarkerPreview::make()` (dans le formulaire des types) dessine le marqueur avec
 `marker-element.js` et le pose comme MapLibre, le dessin réel centré (`resources/js/marker-preview.js`), d'après `Support\MarkerPreview::for($style, $icon, $color, $typeImage)` — les apparences de
 `appearance()` pour chaque image d'exemple (carrée, paysage, portrait), et le statut du type (ce qu'il accepte, et
-pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la liste des types (`compact`).
+pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la liste des types (`compact`) et au choix d'un type
+(`tile`).
+
+**Choisir un type** : `GeoPointTypePicker::make('…')` est le Radio de Filament rendu en cartes carrées, comme
+`MapScenePicker` pour les scènes (deux fois plus petites) : le marqueur de chaque type actif en taille réelle, son nom,
+« Avec image » s'il en accepte une. `->query()` change la requête, `->columns()` le nombre de cartes par ligne.
 
 ## Saisir une position : `MapPositionInput`
 
