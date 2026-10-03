@@ -137,6 +137,49 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                             ->live()
                             ->helperText('En % de la taille standard : '.MarkerShapes::STANDARD_SIZE.' px sur le plus grand côté, celle de l’épingle. L’autre côté suit les proportions de la forme.')
                             ->columnSpanFull(),
+                        Select::make('anchor')
+                            ->label('Ancrage')
+                            ->options([
+                                'center' => 'Centre',
+                                'bottom' => 'Bas (une pointe)',
+                                'top' => 'Haut',
+                                'left' => 'Gauche',
+                                'right' => 'Droite',
+                                'bottom-left' => 'Bas gauche',
+                                'bottom-right' => 'Bas droite',
+                                'top-left' => 'Haut gauche',
+                                'top-right' => 'Haut droite',
+                            ])
+                            ->placeholder('Celui de la forme')
+                            ->live()
+                            ->helperText('Le point de la forme posé sur la position (la croix rouge de l’aperçu). Vide : celui de la forme — la pointe d’une épingle, le data-anchor d’un SVG, sinon le centre.'),
+                        Slider::make('rotation')
+                            ->label('Rotation')
+                            ->range(-180, 180)
+                            ->step(5)
+                            ->default(0)
+                            ->tooltips(RawJs::make('`${Math.round($value)}°`'))
+                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
+                            ->live()
+                            ->helperText('En degrés, autour de l’ancrage.'),
+                        Slider::make('offset.x')
+                            ->label('Décalage horizontal')
+                            ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
+                            ->step(5)
+                            ->default(0)
+                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
+                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
+                            ->live()
+                            ->helperText('En % de la largeur du marqueur, vers la droite : il suit la taille.'),
+                        Slider::make('offset.y')
+                            ->label('Décalage vertical')
+                            ->range(-MarkerShapes::MAX_OFFSET, MarkerShapes::MAX_OFFSET)
+                            ->step(5)
+                            ->default(0)
+                            ->tooltips(RawJs::make('`${Math.round($value)} %`'))
+                            ->formatStateUsing(fn (mixed $state): float => is_numeric($state) ? (float) $state : 0)
+                            ->live()
+                            ->helperText('En % de sa hauteur, vers le bas.'),
                         KeyValue::make('css')
                             ->label('Variables de style')
                             ->live(onBlur: true)

@@ -46,8 +46,10 @@ export function ensureMarkerStyles() {
  * @param {object} appearance  `point.appearance`
  * @param {object} options     `scale` (agrandit le dessin), `color` (si l'apparence n'en a pas), `label` (nom
  *                             accessible), `outlineSlot` (l'aperçu : la zone de contenu en pointillés, même vide)
- * @returns {{ element: HTMLElement, anchor: string }} L'élément à donner à MapLibre — un cadre : le dessin est dans son
- *   enfant, qu'une page peut agrandir ou décaler sans gêner MapLibre, qui positionne le cadre avec `transform`.
+ * @returns {{ element: HTMLElement, anchor: string, offset: [number, number], rotation: number }} L'élément à donner à
+ *   MapLibre — un cadre : le dessin est dans son enfant, qu'une page peut agrandir ou décaler sans gêner MapLibre, qui
+ *   positionne le cadre avec `transform` —, et ses options de position : l'ancrage, le décalage en px (le % de
+ *   l'apparence appliqué à la taille dessinée) et la rotation en degrés, autour de l'ancrage.
  */
 export function markerElement(appearance, { scale = 1, color = null, label = '', outlineSlot = false } = {}) {
     ensureMarkerStyles()
@@ -119,5 +121,10 @@ export function markerElement(appearance, { scale = 1, color = null, label = '',
     element.setAttribute('aria-label', label ?? '')
     element.appendChild(body)
 
-    return { element, anchor: legacy ? LEGACY.anchor : (appearance.anchor ?? 'center') }
+    return {
+        element,
+        anchor: legacy ? LEGACY.anchor : (appearance.anchor ?? 'center'),
+        offset: [(Number(appearance.offset?.x) || 0) * width / 100, (Number(appearance.offset?.y) || 0) * height / 100],
+        rotation: Number(appearance.rotation) || 0,
+    }
 }

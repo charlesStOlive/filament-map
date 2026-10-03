@@ -65,7 +65,9 @@ celles fournies (`Support\MarkerShapes::BUILT_IN` : épingle, cercle, étoile) c
 en SVG côté serveur) ou le texte se posent dans la zone ; sans zone, la forme reste seule. Rien n'y lève d'erreur : ce
 qui manque se rabat sur l'icône, puis sur la forme seule ; un SVG illisible, sur l'épingle. La taille est un pourcentage (`marker_style.size`)
 d'une taille standard, `MarkerShapes::STANDARD_SIZE` (40 px sur le plus grand côté) ; une taille d'avant en px
-(`['width' => …, 'height' => …]`) est lue comme le pourcentage de son plus grand côté.
+(`['width' => …, 'height' => …]`) est lue comme le pourcentage de son plus grand côté. La position : `anchor` (sinon
+celui du SVG), `offset.x` / `offset.y` (en % de la taille) et `rotation` (en degrés), passés à `maplibregl.Marker`
+(`anchor`, `offset` en px, `rotation`).
 
 Un consommateur (un parcours, une application) peut :
 
@@ -79,7 +81,7 @@ Un consommateur (un parcours, une application) peut :
 Un point sans `appearance` garde le marqueur par défaut de MapLibre.
 
 **Aperçu** : `Filament\Forms\Components\MarkerPreview::make()` (dans le formulaire des types) dessine le marqueur avec
-`marker-element.js`, d'après `Support\MarkerPreview::for($style, $icon, $color, $typeImage)` — les apparences de
+`marker-element.js` et le pose comme MapLibre, le dessin réel centré (`resources/js/marker-preview.js`), d'après `Support\MarkerPreview::for($style, $icon, $color, $typeImage)` — les apparences de
 `appearance()` pour chaque image d'exemple (carrée, paysage, portrait), et le statut du type (ce qu'il accepte, et
 pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la liste des types (`compact`).
 

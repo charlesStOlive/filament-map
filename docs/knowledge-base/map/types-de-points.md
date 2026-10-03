@@ -32,7 +32,7 @@ Un type de point est un modèle d'apparence réutilisable. Il permet de garantir
 À droite du formulaire, l'aperçu dessine le marqueur exactement comme la carte, et suit chaque réglage :
 
 - en **taille réelle**, sur un fond clair et sur un fond sombre ;
-- **agrandi**, avec sa zone de contenu en pointillés et une croix rouge à l'endroit de la position du point : c'est là que l'ancrage pose le marqueur (la pointe d'une épingle, le centre d'un cercle) ;
+- **agrandi** autant qu'il tient dans la fenêtre, avec sa zone de contenu en pointillés et une croix rouge à l'endroit de la position du point : c'est là que l'ancrage pose le marqueur (la pointe d'une épingle, le centre d'un cercle), avant décalage et rotation. Le dessin est toujours centré dans la fenêtre, même décalé ou pivoté ;
 - son **statut** : « Accepte une image », « Icône », « Texte », « Forme seule »… Quand un réglage ne produit pas l'effet attendu, l'aperçu dit pourquoi : forme sans zone de contenu, icône introuvable, SVG illisible.
 
 La liste des types montre aussi, pour chacun, son marqueur en taille réelle et ce statut (colonne « Marqueur »), avec son image par défaut s'il en a une, sinon une image d'exemple.
@@ -60,6 +60,14 @@ Seul un type dont le contenu est **Image**, et dont la forme a une zone de conte
 ### Taille et CSS
 
 Tous les marqueurs partagent une **taille standard** : 40 px sur leur plus grand côté, celle de l'épingle (30 × 40). Le curseur **Taille** la règle en pourcentage : 100 % la garde, 60 % fait un point plus discret, 150 % un point plus visible. L'autre côté suit les proportions de la forme. Les variables CSS permettent des ajustements avancés. Testez toujours le résultat à plusieurs niveaux de zoom et sur un petit écran.
+
+### Position
+
+Trois réglages placent le marqueur par rapport à la position du point (la croix rouge de l'aperçu) :
+
+- **Ancrage** : le point de la forme posé sur la position. Laissé vide, celui de la forme : la pointe d'une épingle, le `data-anchor` d'un SVG personnalisé, sinon le centre.
+- **Rotation** : en degrés, autour de l'ancrage. L'image ou l'icône de la zone tourne avec la forme.
+- **Décalage horizontal et vertical** : en % de la largeur et de la hauteur du marqueur, il suit donc la taille. Utile pour écarter un marqueur de sa position, par exemple une étiquette posée à côté du lieu.
 
 ### SVG personnalisé
 

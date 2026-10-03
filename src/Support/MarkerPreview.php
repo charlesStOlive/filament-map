@@ -37,7 +37,7 @@ final class MarkerPreview
     /**
      * @param  array<string, mixed>  $style  Le `marker_style` du type.
      * @param  string|null  $typeImage  L'image par défaut du type, proposée comme exemple quand il en a une.
-     * @return array{status: array{label: string, color: string, detail: string}, acceptsImage: bool, samples: array<string, string>, appearances: array<string, array<string, mixed>>, default: string, anchor: string, size: array{width: float, height: float}}
+     * @return array{status: array{label: string, color: string, detail: string}, acceptsImage: bool, samples: array<string, string>, appearances: array<string, array<string, mixed>>, default: string, anchor: string, offset: array{x: float, y: float}, rotation: float, size: array{width: float, height: float}}
      */
     public static function for(array $style, ?string $icon = null, ?string $color = null, ?string $typeImage = null): array
     {
@@ -74,6 +74,8 @@ final class MarkerPreview
             'appearances' => $appearances,
             'default' => $default,
             'anchor' => $shape['anchor'],
+            'offset' => $shape['offset'],
+            'rotation' => $shape['rotation'],
             'size' => ['width' => $shape['width'], 'height' => $shape['height'], 'percent' => $shape['percent']],
         ];
     }

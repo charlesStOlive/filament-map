@@ -24,7 +24,7 @@ export function addMarkerLayer(map, points, context = {}) {
 
         const marker = new maplibregl.Marker({
             draggable: false,
-            ...(drawn ? { element: drawn.element, anchor: drawn.anchor } : {}),
+            ...(drawn ? { element: drawn.element, anchor: drawn.anchor, offset: drawn.offset, rotation: drawn.rotation } : {}),
             ...markerOptions,
         }).setLngLat([point.position.lng, point.position.lat])
 

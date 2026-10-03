@@ -39,12 +39,21 @@ final class MarkerShapes
     public const MAX_PERCENT = 300;
 
     /**
+     * Le décalage du marqueur par rapport à la position du point, au plus, en % de sa largeur (horizontal) ou de sa
+     * hauteur (vertical) : il suit donc la taille.
+     */
+    public const MAX_OFFSET = 100;
+
+    /**
      * La forme d'un style de marqueur, lue (voir MarkerSvg::shape()), avec son nom et sa taille en px : son plus grand
      * côté est la taille standard multipliée par `size` (un pourcentage, 100 par défaut), l'autre suit les proportions
      * de la forme. Un SVG personnalisé illisible laisse place à l'épingle.
      *
      * @param  array<string, mixed>  $style  Le `marker_style` d'un type ou d'un point.
-     * @return array{name: string, svg: string, ratio: float, slot: array<string, float|string>|null, anchor: string, width: float, height: float, percent: float}
+     * Sa position : l'ancrage (le point de la forme posé sur la position : celui du style, sinon du SVG), le décalage
+     * (`offset`, en % de la taille) et la rotation (`rotation`, en degrés, autour de l'ancrage).
+     *
+     * @return array{name: string, svg: string, ratio: float, slot: array<string, float|string>|null, anchor: string, width: float, height: float, percent: float, offset: array{x: float, y: float}, rotation: float}
      */
     public static function resolve(array $style): array
     {
@@ -60,7 +69,25 @@ final class MarkerShapes
         $side = self::STANDARD_SIZE * $percent / 100;
         [$width, $height] = $shape['ratio'] >= 1 ? [$side, $side / $shape['ratio']] : [$side * $shape['ratio'], $side];
 
-        return ['name' => $name, ...$shape, 'width' => round($width, 2), 'height' => round($height, 2), 'percent' => $percent];
+        return [
+            'name' => $name,
+            ...$shape,
+            // L'ancrage réglé sur le type l'emporte sur celui du SVG (data-anchor).
+            'anchor' => in_array($style['anchor'] ?? null, MarkerSvg::ANCHORS, true) ? $style['anchor'] : $shape['anchor'],
+            'width' => round($width, 2),
+            'height' => round($height, 2),
+            'percent' => $percent,
+            'offset' => [
+                'x' => self::bounded($style['offset']['x'] ?? 0, -self::MAX_OFFSET, self::MAX_OFFSET),
+                'y' => self::bounded($style['offset']['y'] ?? 0, -self::MAX_OFFSET, self::MAX_OFFSET),
+            ],
+            'rotation' => self::bounded($style['rotation'] ?? 0, -180, 180),
+        ];
+    }
+
+    private static function bounded(mixed $value, float $min, float $max): float
+    {
+        return is_numeric($value) ? (float) max($min, min($max, round((float) $value, 2))) : 0.0;
     }
 
     /**

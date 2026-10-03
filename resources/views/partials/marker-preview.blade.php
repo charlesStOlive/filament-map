@@ -1,20 +1,20 @@
 {{--
     L'aperçu d'un marqueur (Support\MarkerPreview::for()) : dessiné par resources/js/layers/marker-element.js, le code
-    de la carte. `$compact` : la seule taille réelle, pour la liste des types.
+    de la carte, et posé dans chaque scène (`data-marker-stage`) par resources/js/marker-preview.js, comme MapLibre le
+    poserait — ancrage, décalage, rotation —, le dessin réel centré. `$compact` : la seule taille réelle, pour la liste
+    des types.
 
-    Chaque scène (`data-marker-stage`) reçoit le marqueur posé par son ancrage sur le centre, là où serait la position
-    du point. L'image d'exemple choisie est gardée pour la session (sessionStorage) : l'aperçu est redessiné à chaque
-    saisie, `wire:key` changeant avec lui.
+    L'image d'exemple choisie est gardée pour la session (sessionStorage) : l'aperçu est redessiné à chaque saisie,
+    `wire:key` changeant avec lui.
 --}}
 @php
     $compact ??= false;
-    $file = public_path('vendor/filament-map/layers/marker-element.js');
-    $moduleUrl = asset('vendor/filament-map/layers/marker-element.js') . (is_file($file) ? '?v=' . filemtime($file) : '');
+    $file = public_path('vendor/filament-map/marker-preview.js');
+    $moduleUrl = asset('vendor/filament-map/marker-preview.js') . (is_file($file) ? '?v=' . filemtime($file) : '');
     $status = $preview['status'];
     $light = 'background-color: #eef1ea; background-image: linear-gradient(#dfe5da 1px, transparent 1px), linear-gradient(90deg, #dfe5da 1px, transparent 1px); background-size: 16px 16px;';
     $dark = 'background-color: #22303a; background-image: linear-gradient(#2c3c47 1px, transparent 1px), linear-gradient(90deg, #2c3c47 1px, transparent 1px); background-size: 16px 16px;';
     $size = $preview['size'];
-    $zoom = max(1, min(4, floor(150 / max($size['width'], $size['height'], 1))));
 @endphp
 
 <div
@@ -30,18 +30,12 @@
                 if (kept && this.appearances[kept]) this.sample = kept
             } catch (error) {}
 
-            const { markerElement } = await import(@js($moduleUrl))
-            const shifts = { center: '-50%, -50%', top: '-50%, 0', bottom: '-50%, -100%', left: '0, -50%', right: '-100%, -50%', 'top-left': '0, 0', 'top-right': '-100%, 0', 'bottom-left': '0, -100%', 'bottom-right': '-100%, -100%' }
+            const { drawMarkerStage } = await import(@js($moduleUrl))
 
-            this.draw = () => this.$root.querySelectorAll('[data-marker-stage]').forEach((stage) => {
-                const { element, anchor } = markerElement(this.appearances[this.sample], {
-                    scale: Number(stage.dataset.scale),
-                    outlineSlot: stage.dataset.outline === '1',
-                })
-                const holder = stage.querySelector('[data-marker-holder]')
-                holder.style.transform = `translate(${shifts[anchor] ?? shifts.center})`
-                holder.replaceChildren(element)
-            })
+            this.draw = () => this.$root.querySelectorAll('[data-marker-stage]').forEach((stage) => drawMarkerStage(stage, this.appearances[this.sample], {
+                fit: stage.dataset.fit === '1',
+                outlineSlot: stage.dataset.outline === '1',
+            }))
             this.draw()
         },
         choose(key) {
@@ -53,8 +47,8 @@
     @class(['flex flex-col gap-3' => ! $compact, 'flex items-center gap-2' => $compact])
 >
     @if ($compact)
-        <div data-marker-stage data-scale="1" class="relative size-14 shrink-0 overflow-hidden rounded-md" style="{{ $light }}">
-            <div class="absolute left-1/2 top-1/2"><div data-marker-holder></div></div>
+        <div data-marker-stage class="relative size-14 shrink-0 overflow-hidden rounded-md" style="{{ $light }}">
+            <div data-marker-holder></div>
         </div>
         <x-filament::badge :color="$status['color']" size="sm">{{ $status['label'] }}</x-filament::badge>
     @else
@@ -62,29 +56,31 @@
             <x-filament::badge :color="$status['color']">{{ $status['label'] }}</x-filament::badge>
             <span class="text-xs text-gray-500 dark:text-gray-400">
                 {{ (int) $size['percent'] }} % : {{ rtrim(rtrim(number_format($size['width'], 1, ',', ''), '0'), ',') }} × {{ rtrim(rtrim(number_format($size['height'], 1, ',', ''), '0'), ',') }} px,
-                ancré {{ \CharlesStOlive\FilamentMap\Support\MarkerPreview::anchorLabel($preview['anchor']) }}
+                ancré {{ \CharlesStOlive\FilamentMap\Support\MarkerPreview::anchorLabel($preview['anchor']) }}@if ($preview['offset']['x'] || $preview['offset']['y']), décalé de {{ (float) $preview['offset']['x'] }} % et {{ (float) $preview['offset']['y'] }} %@endif@if ($preview['rotation']), pivoté de {{ (float) $preview['rotation'] }}°@endif
             </span>
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-300">{{ $status['detail'] }}</p>
 
         <div class="grid grid-cols-2 gap-2">
-            <div data-marker-stage data-scale="1" class="relative h-24 overflow-hidden rounded-lg" style="{{ $light }}">
-                <div class="absolute left-1/2 top-1/2"><div data-marker-holder></div></div>
+            <div data-marker-stage class="relative h-24 overflow-hidden rounded-lg" style="{{ $light }}">
+                <div data-marker-holder></div>
                 <span class="absolute bottom-1 left-2 text-[10px] text-gray-500">Taille réelle</span>
             </div>
-            <div data-marker-stage data-scale="1" class="relative h-24 overflow-hidden rounded-lg" style="{{ $dark }}">
-                <div class="absolute left-1/2 top-1/2"><div data-marker-holder></div></div>
+            <div data-marker-stage class="relative h-24 overflow-hidden rounded-lg" style="{{ $dark }}">
+                <div data-marker-holder></div>
                 <span class="absolute bottom-1 left-2 text-[10px] text-gray-300">Fond sombre</span>
             </div>
         </div>
 
-        <div data-marker-stage data-scale="{{ $zoom }}" data-outline="1" class="relative h-64 overflow-hidden rounded-lg" style="{{ $light }}">
-            <div class="absolute left-1/2 top-1/2"><div data-marker-holder></div></div>
-            {{-- La position du point : là où l'ancrage pose le marqueur. --}}
-            <div class="pointer-events-none absolute left-1/2 top-1/2 h-px w-6 -translate-x-1/2 bg-rose-500/80"></div>
-            <div class="pointer-events-none absolute left-1/2 top-1/2 h-6 w-px -translate-y-1/2 bg-rose-500/80"></div>
+        <div data-marker-stage data-fit="1" data-outline="1" class="relative h-64 overflow-hidden rounded-lg" style="{{ $light }}">
+            <div data-marker-holder></div>
+            {{-- La position du point : là où l'ancrage pose le marqueur, avant décalage. --}}
+            <div data-marker-cross class="pointer-events-none absolute size-0">
+                <div class="absolute h-px w-6 -translate-x-1/2 bg-rose-500/80"></div>
+                <div class="absolute h-6 w-px -translate-y-1/2 bg-rose-500/80"></div>
+            </div>
             <span class="absolute bottom-1 left-2 text-[10px] text-gray-500">
-                Agrandi × {{ $zoom }} — en pointillés, la zone de contenu ; la croix, la position du point
+                Agrandi <span data-marker-zoom></span> — en pointillés, la zone de contenu ; la croix, la position du point
             </span>
         </div>
 

@@ -210,9 +210,10 @@ class MapPayloadBuilder
     }
 
     /**
-     * Ce que le navigateur dessine (resources/js/layers/marker-layer.js), tout prêt : la forme (MarkerShapes : son SVG
-     * nettoyé, sa zone de contenu `slot` en %, son ancrage, sa taille en px), le contenu de la zone (l'icône déjà en
-     * SVG dans `content.html`), la couleur et les variables de style. L'aperçu d'un type (MarkerPreview) passe par ici.
+     * Ce que le navigateur dessine (resources/js/layers/marker-element.js), tout prêt : la forme (MarkerShapes : son
+     * SVG nettoyé, sa zone de contenu `slot` en %, sa taille en px, son ancrage, son décalage en % et sa rotation), le
+     * contenu de la zone (l'icône déjà en SVG dans `content.html`), la couleur et les variables de style. L'aperçu d'un
+     * type (MarkerPreview) passe par ici.
      *
      * Ce qui manque se rabat sans erreur : un contenu « Image » sans image montre l'icône, une icône inconnue rien, une
      * forme sans zone de contenu rien d'autre qu'elle-même, un SVG illisible l'épingle.
@@ -246,6 +247,8 @@ class MapPayloadBuilder
             'content' => ['type' => $contentType, 'value' => $contentValue, 'html' => $html],
             'color' => $color,
             'size' => ['width' => $shape['width'], 'height' => $shape['height']],
+            'offset' => $shape['offset'],
+            'rotation' => $shape['rotation'],
             'css' => is_array($style['css'] ?? null) ? $style['css'] : [],
         ];
     }
