@@ -15,6 +15,6 @@ class EditGeoPointType extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return array_filter([$this->contextualReturnAction(), DeleteAction::make()]);
+        return array_filter([$this->contextualReturnAction(), GeoPointTypeResource::replicateAction(), DeleteAction::make()]);
     }
 }

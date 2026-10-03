@@ -103,6 +103,12 @@ Avec un contenu **Image**, le marqueur prend la première image disponible :
 
 Sans aucune image, il montre l'icône du type ; sans icône, la forme seule.
 
+## Dupliquer un type
+
+Pour une variante (une autre couleur, une autre taille), **Dupliquer**, dans la liste des types ou en haut de la fiche d'un type, en fait une copie : forme, contenu, taille, position, variables de style, options et image par défaut. La fenêtre ne demande que le **nom** et la **clé** de la copie, proposés d'après l'original (« … (copie) ») ; la clé doit être libre. On arrive ensuite sur la fiche de la copie. Les points de l'original restent à lui.
+
+Il faut le droit de créer un type.
+
 ## Modifier un type existant
 
 Une modification peut affecter tous les points qui héritent de ce type. Avant de changer radicalement sa forme ou sa signification, vérifiez le nombre de points associés. Créez un nouveau type si l'ancien et le nouveau sens doivent coexister.

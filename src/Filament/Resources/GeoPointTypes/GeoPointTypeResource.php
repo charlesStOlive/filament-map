@@ -11,6 +11,7 @@ use CharlesStOlive\FilamentMap\Models\GeoPointType;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ReplicateAction;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
@@ -222,12 +223,66 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
             ])
             ->recordActions([
                 EditAction::make(),
+                static::replicateAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Dupliquer un type : tout son rendu (forme, contenu, taille, position, style, options) et son image par défaut. On
+     * ne demande que le nom et la clé de la copie, proposés d'après l'original ; on arrive ensuite sur sa fiche. Les
+     * points de l'original restent à lui. Avec filament-permission-manager, il faut le droit de créer un type.
+     */
+    public static function replicateAction(): ReplicateAction
+    {
+        return ReplicateAction::make()
+            ->label('Dupliquer')
+            ->modalHeading(fn (GeoPointType $record): string => 'Dupliquer « '.$record->name.' »')
+            ->modalDescription('La copie reprend tout le rendu et l’image par défaut. Seuls son nom et sa clé changent.')
+            ->modalSubmitActionLabel('Dupliquer')
+            ->excludeAttributes(['points_count'])
+            ->mutateRecordDataUsing(fn (array $data): array => [
+                'name' => ($data['name'] ?? 'Type').' (copie)',
+                'key' => static::uniqueKey(($data['key'] ?? 'type').'-copie'),
+            ])
+            ->schema([
+                TextInput::make('name')
+                    ->label('Nom')
+                    ->required()
+                    ->maxLength(255)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (?string $state, callable $set) => $set('key', Str::slug($state ?? ''))),
+                TextInput::make('key')
+                    ->label('Clé')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(GeoPointType::class, 'key'),
+            ])
+            // replicate() reprend aussi les relations chargées : les médias de l'original ne sont pas ceux de la copie.
+            ->beforeReplicaSaved(fn (GeoPointType $replica) => $replica->setRelations([]))
+            ->after(function (GeoPointType $record, GeoPointType $replica): void {
+                $collection = config('filament-map.media_collections.default_marker_image', 'default_marker_image');
+                $record->getFirstMedia($collection)?->copy($replica, $collection);
+            })
+            ->successNotificationTitle('Type dupliqué')
+            ->successRedirectUrl(fn (GeoPointType $replica): string => static::getUrl('edit', ['record' => $replica]));
+    }
+
+    /** Une clé libre : celle-ci, sinon suivie de -2, -3… */
+    protected static function uniqueKey(string $key): string
+    {
+        $key = Str::slug($key);
+        $candidate = $key;
+
+        for ($i = 2; GeoPointType::query()->where('key', $candidate)->exists(); $i++) {
+            $candidate = "{$key}-{$i}";
+        }
+
+        return $candidate;
     }
 
     public static function getPages(): array
