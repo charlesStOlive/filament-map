@@ -76,6 +76,11 @@ Un consommateur (un parcours, une application) peut :
 
 Un point sans `appearance` garde le marqueur par défaut de MapLibre.
 
+**Aperçu** : `Filament\Forms\Components\MarkerPreview::make()` (dans le formulaire des types) dessine le marqueur avec
+`marker-element.js`, d'après `Support\MarkerPreview::for($style, $icon, $color, $typeImage)` — les apparences de
+`appearance()` pour chaque image d'exemple (carrée, paysage, portrait), et le statut du type (ce qu'il accepte, et
+pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la liste des types (`compact`).
+
 ## Saisir une position : `MapPositionInput`
 
 Un composant de formulaire pour une **position sur la carte** et les réglages qui
