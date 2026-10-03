@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap\Models;
 
+use CharlesStOlive\FilamentMap\Support\MarkerShapes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,13 +47,20 @@ class GeoPointType extends Model implements HasMedia
         return $this->marker_style['content']['type'] ?? config('filament-map.markers.content_type', 'icon');
     }
 
+    /** Sa forme a-t-elle une zone de contenu (`data-slot`, voir MarkerSvg) ? Les formes fournies en ont toutes une. */
+    public function hasContentSlot(): bool
+    {
+        return MarkerShapes::resolve($this->marker_style ?? [])['slot'] !== null;
+    }
+
     /**
-     * Le point de ce type montre-t-il une image (une mini-vignette) ? Seulement si son contenu est « Image ». Une image
-     * qu'on lui propose (MapPayloadBuilder::point()) est sinon ignorée : un type qui n'est qu'une forme reste une forme.
+     * Le point de ce type montre-t-il une image (une mini-vignette) ? Seulement si son contenu est « Image » et que sa
+     * forme a une zone où la poser. Une image qu'on lui propose (MapPayloadBuilder::point()) est sinon ignorée : un type
+     * qui n'est qu'une forme reste une forme.
      */
     public function acceptsImage(): bool
     {
-        return $this->contentType() === 'image';
+        return $this->contentType() === 'image' && $this->hasContentSlot();
     }
 
     public function points(): HasMany

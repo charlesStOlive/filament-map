@@ -6,6 +6,7 @@ use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use CharlesStOlive\FilamentMap\Models\MapScene;
 use CharlesStOlive\FilamentMap\Support\MapKeys;
+use CharlesStOlive\FilamentMap\Support\MarkerShapes;
 use CharlesStOlive\FilamentMap\Support\MarkerSvg;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -198,7 +199,7 @@ class MapPayloadBuilder
             'color' => $color,
             'image' => $image,
             'style' => $markerStyle,
-            'appearance' => $this->pointAppearance($markerStyle, $icon, $image, $color),
+            'appearance' => $this->appearance($markerStyle, $icon, $image, $color),
             'cluster' => [
                 'enabled' => (bool) ($options['clusterable'] ?? true),
                 'group' => $options['cluster_group'] ?? 'default',
@@ -209,12 +210,18 @@ class MapPayloadBuilder
     }
 
     /**
-     * Ce que le navigateur dessine (resources/js/layers/marker-layer.js). Tout y est prêt à l'emploi : l'icône est déjà
-     * son SVG (`content.html`), la forme personnalisée est nettoyée. Ce qui manque se rabat sans erreur : un contenu
-     * « Image » sans image montre l'icône, une icône inconnue rien, une forme SVG illisible l'épingle.
+     * Ce que le navigateur dessine (resources/js/layers/marker-layer.js), tout prêt : la forme (MarkerShapes : son SVG
+     * nettoyé, sa zone de contenu `slot` en %, son ancrage, sa taille en px), le contenu de la zone (l'icône déjà en
+     * SVG dans `content.html`), la couleur et les variables de style. L'aperçu d'un type (MarkerPreview) passe par ici.
+     *
+     * Ce qui manque se rabat sans erreur : un contenu « Image » sans image montre l'icône, une icône inconnue rien, une
+     * forme sans zone de contenu rien d'autre qu'elle-même, un SVG illisible l'épingle.
+     *
+     * @param  array<string, mixed>  $style  Le `marker_style` du type, complété par celui du point.
      */
-    protected function pointAppearance(array $style, ?string $icon, ?string $image, ?string $color): array
+    public function appearance(array $style, ?string $icon = null, ?string $image = null, ?string $color = null): array
     {
+        $shape = MarkerShapes::resolve($style);
         $content = is_array($style['content'] ?? null) ? $style['content'] : [];
         $declared = $content['type'] ?? config('filament-map.markers.content_type', 'icon');
         $contentType = $declared === 'image' && blank($image) ? 'icon' : $declared;
@@ -227,19 +234,18 @@ class MapPayloadBuilder
         };
         $html = $contentType === 'icon' ? MarkerSvg::icon($contentValue) : null;
 
-        if (blank($contentValue) || ($contentType === 'icon' && $html === null)) {
-            [$contentType, $contentValue] = ['none', null];
+        if ($shape['slot'] === null || blank($contentValue) || ($contentType === 'icon' && $html === null)) {
+            [$contentType, $contentValue, $html] = ['none', null, null];
         }
 
-        $shape = $style['shape'] ?? config('filament-map.markers.shape', 'pin');
-        $svg = $shape === 'svg' ? MarkerSvg::sanitize($style['svg'] ?? null) : null;
-
         return [
-            'shape' => $shape === 'svg' && $svg === null ? 'pin' : $shape,
-            'svg' => $svg,
+            'shape' => $shape['name'],
+            'svg' => $shape['svg'],
+            'slot' => $shape['slot'],
+            'anchor' => $shape['anchor'],
             'content' => ['type' => $contentType, 'value' => $contentValue, 'html' => $html],
             'color' => $color,
-            'size' => is_array($style['size'] ?? null) ? $style['size'] : [],
+            'size' => ['width' => $shape['width'], 'height' => $shape['height']],
             'css' => is_array($style['css'] ?? null) ? $style['css'] : [],
         ];
     }

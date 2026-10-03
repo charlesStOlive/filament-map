@@ -57,16 +57,19 @@ Voir [les scènes cartographiques](docs/knowledge-base/map/scenes.md).
 
 ## Apparence des points
 
-`MapPayloadBuilder::point()` prépare `appearance` (forme, contenu, couleur, taille, variables CSS), que
-`resources/js/layers/marker-layer.js` dessine : épingle, cercle, étoile ou SVG nettoyé (`Support\MarkerSvg`), avec une
-icône (déjà rendue en SVG côté serveur), une image ou un texte. Rien n'y lève d'erreur : ce qui manque se rabat sur
-l'icône, puis sur la forme seule.
+`MapPayloadBuilder::appearance()` (appelé par `point()`) prépare `appearance`, que
+`resources/js/layers/marker-element.js` dessine — sur la carte comme dans l'aperçu d'un type. Toute forme est un SVG :
+celles fournies (`Support\MarkerShapes::BUILT_IN` : épingle, cercle, étoile) comme un SVG personnalisé, nettoyé et lu par
+`Support\MarkerSvg`. Le SVG désigne sa **zone de contenu** par un `circle`, une `ellipse` ou un `rect` marqué
+`data-slot` (traduite en % : `slot`), et son **ancrage** par `data-anchor` sur sa racine. L'image, l'icône (déjà rendue
+en SVG côté serveur) ou le texte se posent dans la zone ; sans zone, la forme reste seule. Rien n'y lève d'erreur : ce
+qui manque se rabat sur l'icône, puis sur la forme seule ; un SVG illisible, sur l'épingle.
 
 Un consommateur (un parcours, une application) peut :
 
 - **proposer une image** : `point($point, image: $url)`. Elle passe après l'image propre au point et avant celle du
-  type, et n'est montrée que si le type l'accepte (`GeoPointType::acceptsImage()`, contenu « Image ») ; sinon elle est
-  ignorée ;
+  type, et n'est montrée que si le type l'accepte (`GeoPointType::acceptsImage()` : contenu « Image » et forme avec
+  une zone de contenu) ; sinon elle est ignorée ;
 - **donner sa couleur** au point sans créer de type : l'option `color` du point (`options.color`) l'emporte sur celle du
   type ;
 - passer des options MapLibre par `options.marker` (`className`, `anchor`, `offset`…) ; `scale` y agrandit le dessin.

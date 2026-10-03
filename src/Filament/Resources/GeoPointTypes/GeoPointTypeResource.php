@@ -15,6 +15,7 @@ use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use CharlesStOlive\FilamentMap\Support\MapPermissions;
+use CharlesStOlive\FilamentMap\Support\MarkerShapes;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -79,12 +80,7 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                 ->schema([
                     Select::make('shape')
                         ->label('Forme')
-                        ->options([
-                            'pin' => 'Goutte / epingle',
-                            'circle' => 'Cercle',
-                            'star' => 'Etoile',
-                            'svg' => 'SVG personnalise',
-                        ])
+                        ->options(MarkerShapes::LABELS)
                         ->default('pin')
                         ->required(),
                     Select::make('content.type')
@@ -99,7 +95,7 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                         ->required(),
                     Textarea::make('svg')
                         ->label('SVG personnalise')
-                        ->helperText('Peint de la couleur du point (currentColor). Il est nettoyé avant son rendu : scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
+                        ->helperText('Avec une viewBox. currentColor prend la couleur du point. La zone qui reçoit l’image, l’icône ou le texte est un circle, une ellipse ou un rect marqué data-slot (il n’est pas dessiné) ; sans elle, la forme reste seule. data-anchor="bottom" sur la balise svg pose sa base sur la position (centre par défaut). Scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
                         ->rows(6)
                         ->columnSpanFull(),
                     TextInput::make('content.value')
