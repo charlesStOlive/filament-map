@@ -32,6 +32,7 @@
                 url: @js(config('filament-map.tiles.url')),
                 attribution: @js(config('filament-map.tiles.attribution')),
             },
+            keys: @js(\CharlesStOlive\FilamentMap\Support\MapKeys::all()),
             files: {
                 urlPrefix: @js(rtrim(\Illuminate\Support\Facades\Storage::disk(config('filament-map.files.disk', 'public'))->url(''), '/') . '/'),
             },
@@ -56,7 +57,14 @@
                 Recadrer sur la couche
             </x-filament::button>
 
-            <span x-text="message"></span>
+            <span
+                x-text="message"
+                x-bind:class="{
+                    'text-success-600 dark:text-success-400': status === 'ok',
+                    'text-danger-600 dark:text-danger-400 font-medium': status === 'error',
+                    'animate-pulse': status === 'loading',
+                }"
+            ></span>
         </div>
     </div>
 </x-dynamic-component>

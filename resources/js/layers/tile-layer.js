@@ -1,12 +1,20 @@
 /**
- * Deux natures de couche "tile" cohabitent :
- * - un style MapLibre complet (TileCat & co) : la source à `options.style_url`
- *   décrit un fond entier (sources+layers+sprite+glyphs), il remplace donc le
- *   style actif de la carte au lieu de s'y ajouter (comportement "radio",
- *   cohérent avec le groupe `baseLayers` du sélecteur de couches).
- * - un simple flux raster {z}/{x}/{y} : ajouté comme source+layer `raster`
- *   dans le style courant, il peut cohabiter avec d'autres couches.
+ * Deux natures de fond cohabitent :
+ * - un style MapLibre complet (couche de type "style" : MapTiler, TileCat…) :
+ *   son URL décrit un fond entier (sources+layers+sprite+glyphs), il remplace
+ *   donc le style actif de la carte au lieu de s'y ajouter (comportement
+ *   "radio", cohérent avec le groupe `baseLayers` du sélecteur de couches).
+ * - un simple flux raster {z}/{x}/{y} (type "tile") : ajouté comme
+ *   source+layer `raster` dans le style courant, il peut cohabiter avec
+ *   d'autres couches.
+ * Une ancienne couche "tile" qui porte `options.style_url` reste un style.
  */
+export function addStyleLayer(map, layer, context = {}) {
+    const url = layer.source?.url ?? layer.options?.style_url ?? layer.options?.styleUrl
+
+    return url ? createStyleLayer(layer, url, context) : null
+}
+
 export function addTileLayer(map, layer, context = {}) {
     const url = layer.source?.url
 
@@ -51,7 +59,10 @@ function createStyleLayer(layer, styleUrl, context) {
         }
     }
 
-    if (layer.visible) {
+    // « Visible par défaut » choisit le fond de départ : une fois un fond actif
+    // (celui de départ, ou un autre choisi depuis), refaire les couches après
+    // un changement de style ne doit pas le reprendre.
+    if (layer.visible && !context.hasActiveStyle?.()) {
         api.addTo()
     }
 

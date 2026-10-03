@@ -5,6 +5,7 @@ namespace CharlesStOlive\FilamentMap\Services;
 use CharlesStOlive\FilamentMap\Models\GeoPoint;
 use CharlesStOlive\FilamentMap\Models\MapLayer;
 use CharlesStOlive\FilamentMap\Models\MapScene;
+use CharlesStOlive\FilamentMap\Support\MapKeys;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -83,7 +84,7 @@ class MapPayloadBuilder
             'id' => $layer->getKey(),
             'name' => $layer->name,
             'key' => $layer->key,
-            'type' => $layer->type,
+            'type' => $layer->renderType(),
             'visible' => (bool) ($pivot?->is_visible_by_default ?? true),
             'source' => $this->resolveKeys($this->layerSource($layer)),
             'style' => array_replace_recursive($layer->style ?? [], $this->pivotJson($pivot?->style)),
@@ -94,25 +95,14 @@ class MapPayloadBuilder
     }
 
     /**
-     * Remplace « {key:maptiler} » par la clé du fournisseur (`filament-map.keys`) dans toutes les chaînes de la couche : une
-     * couche cite sa clé sans la porter. Une clé inconnue laisse une chaîne vide, l'URL échoue alors chez le fournisseur.
+     * Remplace « {key:maptiler} » par la clé du fournisseur dans toutes les chaînes de la couche (voir Support\MapKeys).
      *
      * @param  array<mixed>  $value
      * @return array<mixed>
      */
     protected function resolveKeys(array $value): array
     {
-        array_walk_recursive($value, static function (mixed &$item): void {
-            if (is_string($item) && str_contains($item, '{key:')) {
-                $item = preg_replace_callback(
-                    '/\{key:([a-z0-9_-]+)\}/i',
-                    static fn (array $match): string => (string) config('filament-map.keys.'.strtolower($match[1]), ''),
-                    $item,
-                );
-            }
-        });
-
-        return $value;
+        return MapKeys::resolve($value);
     }
 
     protected function layerSource(MapLayer $layer): array
@@ -121,6 +111,10 @@ class MapPayloadBuilder
 
         if ($media !== null) {
             return ['type' => 'url', 'url' => $media->getUrl()];
+        }
+
+        if ($layer->isBaseMap()) {
+            return ['type' => 'url', 'url' => $layer->baseMapUrl()];
         }
 
         return match ($layer->source_type) {

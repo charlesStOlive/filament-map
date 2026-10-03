@@ -188,7 +188,12 @@ Champs principaux :
 - `sort_order`
 - `is_visible_by_default`
 - `is_active`
+- `check_status`, `check_message`, `checked_at` : la dernière vérification (Services\MapLayerChecker)
 - timestamps
+
+`type` : `style` (fond vectoriel, `source_url` = style.json), `tile` (fond raster `{z}/{x}/{y}`), `geojson`, `points`,
+`svg_overlay`, `custom`. Un fond n'a qu'une source, son URL. Une ancienne couche `tile` avec `options.style_url` est lue
+comme un `style` (MapLayer::renderType()).
 
 `style` definit le style global de la couche.
 

@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap;
 
+use CharlesStOlive\FilamentMap\Commands\CheckMapLayersCommand;
 use CharlesStOlive\FilamentMap\Commands\InstallFilamentMapCommand;
 use CharlesStOlive\FilamentMap\Livewire\MapViewer;
 use CharlesStOlive\FilamentMap\Services\Geocoding\Geocoder;
@@ -18,9 +19,10 @@ class FilamentMapServiceProvider extends PackageServiceProvider
             ->name('filament-map')
             ->hasConfigFile('filament-map')
             ->hasViews('filament-map')
-            ->hasMigrations(['create_filament_map_tables', 'create_filament_map_scene_tables', 'add_thumbnail_to_filament_map_scenes_table'])
+            ->hasMigrations(['create_filament_map_tables', 'create_filament_map_scene_tables', 'add_thumbnail_to_filament_map_scenes_table', 'add_check_to_filament_map_layers_table'])
             ->hasCommands([
                 InstallFilamentMapCommand::class,
+                CheckMapLayersCommand::class,
             ]);
     }
 

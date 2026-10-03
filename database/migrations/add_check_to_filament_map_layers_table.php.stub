@@ -1,0 +1,61 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * La vérification d'une couche (Services\MapLayerChecker) : son état, sa raison et sa date, montrés dans la liste et la
+ * fiche. Et le type « style » des fonds vectoriels : une ancienne couche « tile » qui portait son style.json dans
+ * `options.style_url` le devient, l'adresse passe dans `source_url`.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $table = config('filament-map.tables.layers', 'filament_map_layers');
+
+        Schema::table($table, function (Blueprint $table): void {
+            $table->string('check_status', 16)->nullable()->after('is_active');
+            $table->text('check_message')->nullable()->after('check_status');
+            $table->timestamp('checked_at')->nullable()->after('check_message');
+        });
+
+        DB::table($table)->where('type', 'tile')->orderBy('id')->each(function (object $layer) use ($table): void {
+            $options = json_decode((string) $layer->options, true) ?: [];
+            $styleUrl = $options['style_url'] ?? $options['styleUrl'] ?? null;
+
+            if (! filled($styleUrl)) {
+                return;
+            }
+
+            unset($options['style_url'], $options['styleUrl']);
+
+            DB::table($table)->where('id', $layer->id)->update([
+                'type' => 'style',
+                'source_type' => 'url',
+                'source_url' => $styleUrl,
+                'options' => $options === [] ? null : json_encode($options, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+        });
+    }
+
+    public function down(): void
+    {
+        $table = config('filament-map.tables.layers', 'filament_map_layers');
+
+        DB::table($table)->where('type', 'style')->orderBy('id')->each(function (object $layer) use ($table): void {
+            $options = json_decode((string) $layer->options, true) ?: [];
+
+            DB::table($table)->where('id', $layer->id)->update([
+                'type' => 'tile',
+                'options' => json_encode([...$options, 'style_url' => $layer->source_url], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+            ]);
+        });
+
+        Schema::table($table, function (Blueprint $table): void {
+            $table->dropColumn(['check_status', 'check_message', 'checked_at']);
+        });
+    }
+};

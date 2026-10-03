@@ -16,7 +16,15 @@ Identifiant technique stable destiné aux relations, au code et aux parcours. El
 
 ## Couche
 
-Jeu de données superposé à une scène cartographique : tuiles, GeoJSON, tracé, zones, points ou SVG.
+Jeu de données affiché sur une scène cartographique : fond de carte (style ou tuiles), GeoJSON, tracé, zones, points ou SVG.
+
+## État d'une couche
+
+Résultat de sa vérification : **Fonctionne**, **À surveiller** ou **En erreur**, avec la raison. Elle a lieu à chaque enregistrement, ou avec le bouton « Vérifier ».
+
+## Fond vectoriel (style)
+
+Fond de carte complet décrit par un fichier `style.json` (MapTiler, TileCat…) : il fournit les tuiles, les couleurs et les libellés. Une scène en montre un seul à la fois.
 
 ## GeoJSON
 

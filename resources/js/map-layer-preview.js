@@ -16,7 +16,14 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
         map: null,
         previewLayer: null,
         message: '',
+        // info | loading | ok | error : la couleur du message sous la carte.
+        status: 'info',
         fallbackStyle: null,
+        // Le fond par défaut est chargé : on peut y poser une couche. Un style prévisualisé le remplace tout entier.
+        baseReady: false,
+        // Chaque aperçu a son numéro : un événement d'un aperçu précédent ne change pas le message.
+        attempt: 0,
+        refreshTimer: null,
 
         init() {
             const boot = () => {
@@ -36,7 +43,12 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                     zoom: mapConfig.zoom,
                 })
                 this.map.addControl(new maplibregl.NavigationControl(), 'top-left')
-                this.map.on('load', () => this.refresh())
+                this.map.on('error', (event) => this.loadFailed(event))
+                this.map.on('load', () => {
+                    this.baseReady = true
+                    this.refresh()
+                })
+                this.watchFields()
             }
 
             if (window.maplibregl) {
@@ -66,17 +78,55 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             }
         },
 
+        /** L'aperçu suit le formulaire : un champ de la couche change, il se refait. */
+        watchFields() {
+            const paths = Object.entries(config.fields)
+                .filter(([name]) => name !== 'visible')
+                .map(([, path]) => path)
+
+            for (const path of paths) {
+                try {
+                    this.$wire.$watch(path, () => this.scheduleRefresh())
+                } catch (error) {
+                    // Sans $watch (ancienne version de Livewire), le bouton « Actualiser l'aperçu » reste là.
+                }
+            }
+        },
+
+        scheduleRefresh() {
+            window.clearTimeout(this.refreshTimer)
+            this.refreshTimer = window.setTimeout(() => this.refresh(), 300)
+        },
+
         refresh() {
-            if (!this.map || !this.map.isStyleLoaded()) {
+            if (!this.map || !this.baseReady) {
+                return
+            }
+
+            // Un style prévisualisé a remplacé le fond par défaut : on le remet avant de poser autre chose.
+            if (this.previewLayer?.type === 'style') {
+                this.previewLayer = null
+                this.baseReady = false
+                this.map.setStyle(this.fallbackStyle, { diff: false })
+                this.map.once('style.load', () => {
+                    this.baseReady = true
+                    this.refresh()
+                })
                 return
             }
 
             this.clearPreviewLayer()
+            this.attempt++
 
             const layer = this.layerState()
 
             if (layer.visible === false) {
-                this.message = 'Couche masquée par défaut.'
+                this.setMessage('Couche masquée par défaut.')
+                return
+            }
+
+            if (layer.type === 'style' || (layer.type === 'tile' && (layer.options?.style_url ?? layer.options?.styleUrl))) {
+                this.previewStyle(layer)
                 return
             }
 
@@ -95,21 +145,77 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            this.message = `Preview non disponible pour le type ${layer.type || 'inconnu'}.`
+            this.setMessage(`Aperçu non disponible pour le type ${layer.type || 'inconnu'}.`)
+        },
+
+        setMessage(message, status = 'info') {
+            this.message = message
+            this.status = status
+        },
+
+        /** La couche est posée : elle est chargée quand la carte a fini de travailler sans erreur. */
+        awaitLoaded(message) {
+            const attempt = this.attempt
+            this.setMessage('Chargement…', 'loading')
+            this.map.once('idle', () => {
+                if (attempt === this.attempt && this.status === 'loading') {
+                    this.setMessage(message, 'ok')
+                }
+            })
+        },
+
+        /** Une erreur de MapLibre : la source refuse, n'existe pas, ou ne se lit pas. */
+        loadFailed(event) {
+            const error = event?.error ?? {}
+            const status = error.status
+            let host = ''
+
+            try {
+                host = error.url ? ` (${new URL(error.url, window.location.href).host})` : ''
+            } catch (exception) {
+                host = ''
+            }
+
+            const reason = status === 401 || status === 403
+                ? `Accès refusé (${status})${host} : clé absente, invalide ou limitée à d’autres domaines, ou carte non publique.`
+                : status === 404
+                    ? `Introuvable (404)${host} : vérifie l’URL.`
+                    : status
+                        ? `Le serveur répond ${status}${host}.`
+                        : `Erreur de chargement : ${error.message ?? 'inconnue'}${host}.`
+
+            this.setMessage(reason, 'error')
         },
 
         layerState() {
             return {
                 type: this.getField(config.fields.type),
                 sourceType: this.getField(config.fields.sourceType),
-                sourceUrl: this.getField(config.fields.sourceUrl),
+                sourceUrl: this.resolveKeys(this.getField(config.fields.sourceUrl)),
                 sourcePath: this.getField(config.fields.sourcePath),
                 sourceJson: this.parseJson(this.getField(config.fields.sourceJson), null),
                 style: this.parseJson(this.getField(config.fields.style), {}),
                 styleRules: this.parseJson(this.getField(config.fields.styleRules), []),
-                options: this.parseJson(this.getField(config.fields.options), {}),
+                options: this.resolveKeys(this.parseJson(this.getField(config.fields.options), {})),
                 visible: this.getField(config.fields.visible),
             }
+        },
+
+        /** « {key:maptiler} » → la clé configurée, comme le fait le serveur pour les cartes (Support\MapKeys). */
+        resolveKeys(value) {
+            if (typeof value === 'string') {
+                return value.replace(/\{key:([a-z0-9_-]+)\}/gi, (match, name) => config.keys?.[name.toLowerCase()] ?? '')
+            }
+
+            if (Array.isArray(value)) {
+                return value.map((item) => this.resolveKeys(item))
+            }
+
+            if (value && typeof value === 'object') {
+                return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, this.resolveKeys(item)]))
+            }
+
+            return value
         },
 
         sourceUrl(layer) {
@@ -174,20 +280,40 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             return null
         },
 
+        previewStyle(layer) {
+            const url = layer.type === 'tile'
+                ? (layer.options?.style_url ?? layer.options?.styleUrl)
+                : (this.textUrl(layer.sourceUrl) ?? layer.options?.style_url ?? layer.options?.styleUrl)
+
+            if (!url) {
+                this.setMessage('Ajoute l’URL du style (style.json) pour prévisualiser ce fond.')
+                return
+            }
+
+            const attempt = this.attempt
+            this.previewLayer = { type: 'style' }
+            this.setMessage('Chargement du style…', 'loading')
+            this.map.setStyle(url, { diff: false })
+            this.map.once('style.load', () => {
+                if (attempt !== this.attempt) {
+                    return
+                }
+
+                const name = this.map.getStyle()?.name
+                this.awaitLoaded(name ? `Style « ${name} » chargé.` : 'Style chargé.')
+            })
+        },
+
         previewTile(layer) {
             const url = this.sourceUrl(layer)
 
             if (!url) {
-                this.message = 'Ajoute une URL de tuiles pour prévisualiser ce fond.'
+                this.setMessage('Ajoute une URL de tuiles pour prévisualiser ce fond.')
                 return
             }
 
-            const styleUrl = layer.options?.style_url ?? layer.options?.styleUrl
-
-            if (styleUrl) {
-                this.map.setStyle(styleUrl)
-                this.previewLayer = { type: 'style' }
-                this.message = 'Style prévisualisé.'
+            if (/style\.json(\?|$)/.test(url)) {
+                this.setMessage('Cette adresse est un style (style.json), pas des tuiles : choisis le type « Fond de carte vectoriel ».', 'error')
                 return
             }
 
@@ -195,7 +321,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             this.map.addSource(id, { type: 'raster', tiles: [url], tileSize: 256 })
             this.map.addLayer({ id, type: 'raster', source: id })
             this.previewLayer = { type: 'raster', ids: [id] }
-            this.message = 'Fond de tuiles prévisualisé.'
+            this.awaitLoaded('Tuiles chargées.')
         },
 
         previewGeoJson(layer) {
@@ -223,13 +349,13 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 })
 
                 this.previewLayer = { type: 'geojson', ids: [fillId, lineId, circleId], sourceId }
-                this.fitLayer()
-                this.message = 'GeoJSON prévisualisé.'
+                this.awaitLoaded('GeoJSON chargé.')
+                this.map.once('idle', () => this.fitLayer())
             }
 
             if (layer.sourceType === 'json') {
                 if (!layer.sourceJson) {
-                    this.message = 'Ajoute un GeoJSON dans source_json.'
+                    this.setMessage('Ajoute un GeoJSON dans « Source JSON ».')
                     return
                 }
 
@@ -240,7 +366,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             const url = this.sourceUrl(layer)
 
             if (!url) {
-                this.message = layer.sourceType === 'file' ? 'Enregistre le layer après upload pour prévisualiser le fichier.' : 'Ajoute une URL ou un fichier GeoJSON.'
+                this.setMessage(layer.sourceType === 'file' ? 'Enregistre la couche après le téléversement pour prévisualiser le fichier.' : 'Ajoute une URL ou un fichier GeoJSON.')
                 return
             }
 
@@ -252,7 +378,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             const bounds = layer.options?.bounds ?? this.currentMapConfig().bounds
 
             if (!url || !bounds?.southWest || !bounds?.northEast) {
-                this.message = 'Ajoute une source SVG et des bounds.'
+                this.setMessage('Ajoute une source SVG et son emprise (options : bounds).')
                 return
             }
 
@@ -273,7 +399,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             }
 
             this.fitLayer()
-            this.message = 'SVG overlay prévisualisé.'
+            this.awaitLoaded('Image SVG chargée.')
         },
 
         fitLayer() {
@@ -329,20 +455,16 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
                 return
             }
 
-            if (this.previewLayer.type === 'style') {
-                this.map.setStyle(this.fallbackStyle)
-            } else {
-                for (const id of this.previewLayer.ids ?? []) {
-                    if (this.map.getLayer(id)) {
-                        this.map.removeLayer(id)
-                    }
+            for (const id of this.previewLayer.ids ?? []) {
+                if (this.map.getLayer(id)) {
+                    this.map.removeLayer(id)
                 }
+            }
 
-                const sourceId = this.previewLayer.sourceId ?? this.previewLayer.ids?.[0]
+            const sourceId = this.previewLayer.sourceId ?? this.previewLayer.ids?.[0]
 
-                if (sourceId && this.map.getSource(sourceId)) {
-                    this.map.removeSource(sourceId)
-                }
+            if (sourceId && this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId)
             }
 
             this.previewLayer = null
@@ -360,7 +482,7 @@ window.filamentMapLayerPreview = function filamentMapLayerPreview(config) {
             try {
                 return JSON.parse(value)
             } catch (error) {
-                this.message = `JSON invalide : ${error.message}`
+                this.setMessage(`JSON invalide : ${error.message}`, 'error')
                 return fallback
             }
         },

@@ -36,6 +36,8 @@ Le mode ne remplace pas les couches. Il définit le contexte général dans lequ
 1. Choisissez les couches de la bibliothèque et ordonnez-les.
 2. Pour chaque couche, choisissez sa visibilité initiale et, si nécessaire, un style propre à cette scène (cadre replié « Réglages propres à cette scène », en JSON).
 
+Les fonds de carte (vectoriels ou en tuiles) s'excluent : la carte en montre un seul, le premier visible à l'ouverture, et le sélecteur de couches permet de passer à un autre. Si un fond vectoriel ne se charge pas (clé refusée, adresse fausse), la carte affiche le fond OpenStreetMap par défaut plutôt que de rester blanche : consultez l'état de la couche.
+
 Une couche masquée à l'ouverture fait toujours partie de la scène : une interaction peut l'afficher. Une couche absente doit être ajoutée dans la bibliothèque des couches avant de pouvoir être utilisée ici.
 
 ### Régler la vue initiale (cadrage)

@@ -1,7 +1,7 @@
 import { addGeoJsonLayer } from './layers/geojson-layer.js'
 import { addMarkerLayer } from './layers/marker-layer.js'
 import { addSvgOverlayLayer } from './layers/svg-overlay-layer.js'
-import { addTileLayer } from './layers/tile-layer.js'
+import { addStyleLayer, addTileLayer } from './layers/tile-layer.js'
 
 /**
  * Style minimal utilisé quand aucune couche "style" (TileCat & co) n'est
@@ -28,6 +28,7 @@ export class MapLibreMapInstance {
      * forker le package (MapLibreMapInstance.registerLayerRenderer('custom', fn)).
      */
     static layerRenderers = new Map([
+        ['style', addStyleLayer],
         ['tile', addTileLayer],
         ['geojson', addGeoJsonLayer],
         ['points', addGeoJsonLayer],
@@ -48,14 +49,25 @@ export class MapLibreMapInstance {
         this.map = null
         this.layers = new Map()
         this.activeStyleUrl = null
+        // Les styles qui n'ont pas pu se charger : la carte n'y revient pas en boucle.
+        this.failedStyleUrls = new Set()
         this.handleMapClick = (event) => this.coordinatesPicked(event.lngLat)
+    }
+
+    /** L'URL du style d'une couche de fond vectoriel, ou null. */
+    static styleUrlOf(layer) {
+        if (layer.type === 'style') {
+            return layer.source?.url ?? layer.options?.style_url ?? layer.options?.styleUrl ?? null
+        }
+
+        return layer.options?.style_url ?? layer.options?.styleUrl ?? null
     }
 
     initialStyle() {
         const styleLayer = (this.payload.layers ?? []).find(
-            (layer) => layer.visible && (layer.options?.style_url ?? layer.options?.styleUrl),
+            (layer) => layer.visible && MapLibreMapInstance.styleUrlOf(layer),
         )
-        const styleUrl = styleLayer ? (styleLayer.options.style_url ?? styleLayer.options.styleUrl) : null
+        const styleUrl = styleLayer ? MapLibreMapInstance.styleUrlOf(styleLayer) : null
 
         if (styleUrl) {
             this.activeStyleUrl = styleUrl
@@ -98,6 +110,7 @@ export class MapLibreMapInstance {
         }
 
         this.map.addControl(new maplibregl.AttributionControl({ compact: true }))
+        this.map.on('error', (event) => this.styleFailed(event))
 
         this.map.on('load', () => {
             this.configureInteraction()
@@ -161,18 +174,55 @@ export class MapLibreMapInstance {
 
     /** Bascule le style de base (mutuellement exclusif entre couches "style"). */
     activateStyle(url, onReady) {
+        if (this.failedStyleUrls.has(url)) {
+            return
+        }
+
         if (this.activeStyleUrl === url) {
             onReady?.()
             return
         }
 
         this.activeStyleUrl = url
-        this.map.setStyle(url)
+        this.map.setStyle(url, { diff: false })
         this.map.once('style.load', () => {
             this.renderLayers()
             this.renderPoints()
             onReady?.()
         })
+    }
+
+    /**
+     * Le style actif ne se charge pas (clé refusée, adresse fausse…) : la carte
+     * reprend le fond par défaut plutôt que de rester blanche, et le signale
+     * comme une erreur de couche (événement `filament-map:layer-error`).
+     */
+    styleFailed(event) {
+        const url = event?.error?.url
+
+        if (!url || !this.activeStyleUrl || url !== this.activeStyleUrl) {
+            return
+        }
+
+        const layer = (this.payload.layers ?? []).find((item) => MapLibreMapInstance.styleUrlOf(item) === url)
+        const message = `Le fond « ${layer?.name ?? url} » ne se charge pas${event.error.status ? ` (${event.error.status})` : ''} : fond par défaut affiché.`
+
+        console.warn(`[filament-map] ${message}`)
+        window.dispatchEvent(new CustomEvent('filament-map:layer-error', {
+            detail: { mapId: this.payload.map.id, scope: this.payload.state?.eventScope, layer, message },
+        }))
+
+        this.failedStyleUrls.add(url)
+        this.activeStyleUrl = null
+        this.map.setStyle(DEFAULT_STYLE, { diff: false })
+        // Les couches de données et les points sont posés sur le style : ils sont à refaire sur le fond par défaut,
+        // sauf au premier chargement, où l'événement `load` s'en charge.
+        if (this.map.loaded() || this.layers.size > 0) {
+            this.map.once('style.load', () => {
+                this.renderLayers()
+                this.renderPoints()
+            })
+        }
     }
 
     isActiveStyle(url) {
@@ -190,6 +240,7 @@ export class MapLibreMapInstance {
                     scope: this.payload.state?.eventScope,
                     activateStyle: (url, onReady) => this.activateStyle(url, onReady),
                     isActiveStyle: (url) => this.isActiveStyle(url),
+                    hasActiveStyle: () => this.activeStyleUrl !== null,
                 })
             } else {
                 console.warn(`[filament-map] Type de couche "${layer.type}" non pris en charge par le renderer MapLibre (couche "${layer.key}").`)
@@ -250,7 +301,7 @@ export class MapLibreMapInstance {
 
             const entry = { key: layer.key, label: layer.name || layer.key, layer: mapLayer }
 
-            if (layer.type === 'tile') {
+            if (layer.type === 'tile' || layer.type === 'style') {
                 baseLayers.push(entry)
             } else {
                 overlays.push(entry)
