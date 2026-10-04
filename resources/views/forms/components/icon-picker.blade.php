@@ -2,6 +2,9 @@
     IconPicker : l'icône choisie (son dessin, son nom) et le popup qui parcourt le catalogue (route filament-map.icons,
     voir IconCatalog). L'état est le nom de l'icône, lié à Livewire par `$wire.$entangle`. Les dessins viennent des
     fichiers SVG des jeux d'icônes de l'application, jamais d'une saisie.
+    Le popup s'ouvre et se ferme par un événement envoyé sur `window` (`modal()`), jamais par `$dispatch` depuis le champ :
+    dans un modal (la Configuration d'un voyage, une action), l'événement remonterait jusqu'à lui, qui l'arrête
+    (`x-on:open-modal.stop` du composant modal de Filament) — le popup ne l'entendrait jamais.
 --}}
 @php
     $statePath = $getStatePath();
@@ -12,6 +15,9 @@
     <div
         x-data="{
             state: $wire.$entangle(@js($statePath), @js($isLive())),
+            modal(action) {
+                window.dispatchEvent(new CustomEvent(`${action}-modal`, { detail: { id: @js($modalId) } }))
+            },
             svg: @js($getStateSvg()),
             url: @js(route('filament-map.icons')),
             search: '',
@@ -22,7 +28,7 @@
             loading: false,
             request: 0,
             open() {
-                this.$dispatch('open-modal', { id: @js($modalId) })
+                this.modal('open')
                 this.load()
             },
             async load() {
@@ -46,7 +52,7 @@
             pick(icon) {
                 this.state = icon.name
                 this.svg = icon.svg
-                this.$dispatch('close-modal', { id: @js($modalId) })
+                this.modal('close')
             },
             clear() {
                 this.state = null

@@ -6,6 +6,9 @@
     Le résumé est dessiné par resources/js/marker-preview.js d'après l'apparence du type choisie dans `types` ; les cartes
     du popup par partials/marker-preview (`tile`). Tout est dessiné dans le navigateur : `wire:ignore` empêche Livewire de
     remettre des cadres vides en réaffichant la page.
+    Le popup s'ouvre et se ferme par un événement envoyé sur `window` (`modal()`), jamais par `$dispatch` depuis le champ :
+    dans un modal (la Configuration d'un voyage, une action), l'événement remonterait jusqu'à lui, qui l'arrête
+    (`x-on:open-modal.stop` du composant modal de Filament) — le popup ne l'entendrait jamais.
 --}}
 @php
     $statePath = $getStatePath();
@@ -33,6 +36,9 @@
         wire:ignore
         x-data="{
             state: $wire.$entangle(@js($statePath), @js($isLive())),
+            modal(action) {
+                window.dispatchEvent(new CustomEvent(`${action}-modal`, { detail: { id: @js($modalId) } }))
+            },
             types: @js((object) $types),
             placeholderType: @js($placeholderType),
             search: '',
@@ -80,7 +86,7 @@
             },
             pick(id) {
                 this.state = id
-                this.$dispatch('close-modal', { id: @js($modalId) })
+                this.modal('close')
             },
         }"
         class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-gray-900"
@@ -97,7 +103,7 @@
         </div>
 
         @unless ($isDisabled())
-            <x-filament::button size="sm" color="gray" icon="heroicon-m-squares-2x2" x-on:click="$dispatch('open-modal', { id: @js($modalId) })">
+            <x-filament::button size="sm" color="gray" icon="heroicon-m-squares-2x2" x-on:click="modal('open')">
                 Choisir…
             </x-filament::button>
         @endunless
