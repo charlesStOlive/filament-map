@@ -61,6 +61,22 @@ class FilamentMapPlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Les pages des types de points que l'application substitue à celles du plugin : des sous-classes de
+     * ListGeoPointTypes, CreateGeoPointType ou EditGeoPointType (`index`, `create`, `edit`) — par exemple pour leur
+     * donner un volet latéral, que ce plugin ne connaît pas.
+     *
+     *     FilamentMapPlugin::make()->pointTypePages(['edit' => App\Filament\Map\EditGeoPointType::class])
+     *
+     * @param  array<string, class-string>  $pages
+     */
+    public function pointTypePages(array $pages): static
+    {
+        config()->set('filament-map.pages.geo_point_types', $pages);
+
+        return $this;
+    }
+
     /** @return array<int, Action> Les actions ajoutées par l'application à cette page (voir pointTypeActions()). */
     public static function pointTypeActionsFor(string $page, ?GeoPointType $type = null): array
     {

@@ -36,6 +36,9 @@ FilamentMapPlugin::make()->pointTypeActions(fn (string $page, ?GeoPointType $typ
 ]);
 ```
 
+L'application peut aussi substituer ses propres pages (des sous-classes de celles du plugin), par exemple pour leur
+donner un volet latéral : `FilamentMapPlugin::make()->pointTypePages(['index' => …, 'edit' => …])`.
+
 Leurs droits se déclarent sur la liste des types, au format de filament-permission-manager (sans en dépendre) :
 `GeoPointTypeResource::addPermissionActions(['mon-action' => 'Libellé'])`, dans un service provider de l'application ;
 `permissionActions()` les rend.

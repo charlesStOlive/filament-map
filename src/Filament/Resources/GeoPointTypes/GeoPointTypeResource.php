@@ -371,12 +371,18 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
         return $candidate;
     }
 
+    /**
+     * Les pages, ou celles que l'application leur substitue (FilamentMapPlugin::pointTypePages()) — des sous-classes,
+     * par exemple pour y ouvrir un volet.
+     */
     public static function getPages(): array
     {
+        $pages = (array) config('filament-map.pages.geo_point_types', []);
+
         return [
-            'index' => ListGeoPointTypes::route('/'),
-            'create' => CreateGeoPointType::route('/create'),
-            'edit' => EditGeoPointType::route('/{record}/edit'),
+            'index' => ($pages['index'] ?? ListGeoPointTypes::class)::route('/'),
+            'create' => ($pages['create'] ?? CreateGeoPointType::class)::route('/create'),
+            'edit' => ($pages['edit'] ?? EditGeoPointType::class)::route('/{record}/edit'),
         ];
     }
 }
