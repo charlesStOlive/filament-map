@@ -3,20 +3,27 @@
 namespace CharlesStOlive\FilamentMap\Support;
 
 use BladeUI\Icons\Factory;
+use CharlesStOlive\FilamentMap\Models\GeoPointType;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\Finder;
 use Throwable;
 
 /**
- * Les icônes qu'on peut poser dans un marqueur (IconPicker) : celles des jeux Blade Icons de l'application, rangées
- * en groupes — les variantes d'Heroicons à part (contour, plein, mini, micro : `filament-map.icons.groups`), un groupe
- * par autre jeu. Le nom d'une icône est celui qu'on écrit ailleurs (`heroicon-o-map-pin`).
+ * Les icônes qu'on peut poser dans un marqueur (IconPicker), rangées en groupes :
  *
- * Les noms sont lus une fois sur le disque, puis gardés en cache ; le dessin d'une icône est son fichier SVG.
+ * - en tête, les **dessins des types de points** : la forme SVG personnalisée de chaque type (actif ou non : un type
+ *   peut n'exister que pour son dessin), nommée `type:<clé>` (voir MarkerSvg::icon()) ;
+ * - puis les jeux Blade Icons de l'application — les variantes d'Heroicons à part (contour, plein, mini, micro :
+ *   `filament-map.icons.groups`), un groupe par autre jeu —, nommées comme on les écrit ailleurs (`heroicon-o-map-pin`).
+ *
+ * Les fichiers des jeux sont listés une fois, puis gardés en cache ; les dessins des types sont relus à chaque fois.
  */
 final class IconCatalog
 {
-    /** @var array<string, array{name: string, group: string, path: string}>|null */
+    /** Le groupe des dessins des types de points. */
+    public const TYPES_GROUP = 'type';
+
+    /** @var array<string, array{name: string, group: string, path?: string, label?: string, svg?: string}>|null */
     private ?array $icons = null;
 
     /** @return array<string, string> Clé du groupe → libellé, dans l'ordre où on les propose. */
@@ -28,8 +35,8 @@ final class IconCatalog
             $groups[$icon['group']] ??= $this->groupLabel($icon['group']);
         }
 
-        // Les groupes configurés d'abord, dans leur ordre ; les autres jeux ensuite, par nom.
-        $order = array_flip(array_keys(config('filament-map.icons.groups', [])));
+        // Les dessins des types d'abord ; puis les groupes configurés, dans leur ordre ; les autres jeux ensuite, par nom.
+        $order = array_flip([self::TYPES_GROUP, ...array_keys(config('filament-map.icons.groups', []))]);
         uksort($groups, fn (string $a, string $b): int => [$order[$a] ?? PHP_INT_MAX, $a] <=> [$order[$b] ?? PHP_INT_MAX, $b]);
 
         return $groups;
@@ -49,8 +56,11 @@ final class IconCatalog
                 return false;
             }
 
+            // Un dessin de type se cherche aussi par le nom du type.
+            $haystack = $icon['name'].' '.Str::lower(Str::ascii($icon['label'] ?? ''));
+
             foreach ($words as $word) {
-                if (! str_contains($icon['name'], $word)) {
+                if (! str_contains($haystack, $word)) {
                     return false;
                 }
             }
@@ -67,7 +77,7 @@ final class IconCatalog
                 'name' => $icon['name'],
                 'label' => $this->label($icon),
                 'group' => $icon['group'],
-                'svg' => (string) @file_get_contents($icon['path']),
+                'svg' => $this->drawing($icon),
             ], array_slice($found, 0, $limit)),
             'total' => count($found),
         ];
@@ -78,10 +88,15 @@ final class IconCatalog
     {
         $icon = filled($name) ? ($this->icons()[$name] ?? null) : null;
 
-        return $icon === null ? null : ((string) @file_get_contents($icon['path']) ?: null);
+        return $icon === null ? null : ($this->drawing($icon) ?: null);
     }
 
-    /** @return array<string, array{name: string, group: string, path: string}> */
+    private function drawing(array $icon): string
+    {
+        return $icon['svg'] ?? (string) @file_get_contents($icon['path']);
+    }
+
+    /** @return array<string, array{name: string, group: string, path?: string, label?: string, svg?: string}> */
     private function icons(): array
     {
         if ($this->icons !== null) {
@@ -90,7 +105,32 @@ final class IconCatalog
 
         $files = cache()->remember('filament-map.icon-catalog', now()->addDay(), fn (): array => $this->read());
 
-        return $this->icons = array_filter($files, fn (array $icon): bool => is_file($icon['path']));
+        return $this->icons = [
+            ...$this->typeDrawings(),
+            ...array_filter($files, fn (array $icon): bool => is_file($icon['path'])),
+        ];
+    }
+
+    /**
+     * Les dessins des types de points : la forme SVG personnalisée de chaque type qui en a une lisible, nettoyée et sans
+     * sa zone de contenu.
+     *
+     * @return array<string, array{name: string, group: string, label: string, svg: string}>
+     */
+    private function typeDrawings(): array
+    {
+        $drawings = [];
+
+        foreach (GeoPointType::query()->orderBy('name')->get() as $type) {
+            $svg = MarkerSvg::typeDrawing($type);
+
+            if ($svg !== null) {
+                $name = MarkerSvg::TYPE_ICON_PREFIX.$type->key;
+                $drawings[$name] = ['name' => $name, 'group' => self::TYPES_GROUP, 'label' => $type->name, 'svg' => $svg];
+            }
+        }
+
+        return $drawings;
     }
 
     /** @return array<string, array{name: string, group: string, path: string}> */
@@ -137,12 +177,14 @@ final class IconCatalog
 
     private function groupLabel(string $group): string
     {
-        return config("filament-map.icons.groups.{$group}") ?? $group;
+        return $group === self::TYPES_GROUP
+            ? 'Dessins des types de points'
+            : (config("filament-map.icons.groups.{$group}") ?? $group);
     }
 
-    /** Le nom lisible : sans le préfixe de son groupe (`map-pin`). */
+    /** Le nom lisible : celui du type pour un dessin de type, sinon le nom sans le préfixe de son groupe (`map-pin`). */
     private function label(array $icon): string
     {
-        return Str::after($icon['name'], $icon['group'].'-');
+        return $icon['label'] ?? Str::after($icon['name'], $icon['group'].'-');
     }
 }

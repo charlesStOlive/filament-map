@@ -245,7 +245,8 @@ class MapPayloadBuilder
             'svg' => $shape['svg'],
             'slot' => $shape['slot'],
             'anchor' => $shape['anchor'],
-            'content' => ['type' => $contentType, 'value' => $contentValue, 'html' => $html],
+            // `invert` : la zone sur fond clair, l'icône ou le texte de la couleur du point.
+            'content' => ['type' => $contentType, 'value' => $contentValue, 'html' => $html, 'invert' => in_array($contentType, ['icon', 'text'], true) && (bool) ($content['invert'] ?? false)],
             'color' => $color,
             'size' => ['width' => $shape['width'], 'height' => $shape['height']],
             'offset' => $shape['offset'],

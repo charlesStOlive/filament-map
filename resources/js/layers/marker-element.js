@@ -26,6 +26,7 @@ const STYLES = `
     color: var(--filament-map-marker-content-color, #fff); font: 600 calc(var(--filament-map-marker-slot-size) * 0.55)/1 system-ui, sans-serif;
     white-space: nowrap; }
 .filament-map-marker__content > svg { width: 75%; height: 75%; }
+.filament-map-marker__content.is-inverted { background: var(--filament-map-marker-inverted-background, #fff); color: var(--filament-map-marker-color, #3fb1ce); }
 .filament-map-marker__content.is-image { background: #fff; }
 .filament-map-marker__content.is-image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .filament-map-marker__content.is-outlined { outline: 1px dashed rgb(0 0 0 / 0.55); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7); }
@@ -101,6 +102,8 @@ export function markerElement(appearance, { scale = 1, color = null, label = '',
         })
         zone.style.setProperty('--filament-map-marker-slot-size', `${height * slot.height / 100}px`)
         zone.classList.toggle('is-outlined', outlineSlot)
+        // Couleurs inversées : la zone sur fond clair, l'icône ou le texte de la couleur du point.
+        zone.classList.toggle('is-inverted', Boolean(filled && content.invert))
 
         if (filled && content.type === 'image') {
             const image = document.createElement('img')

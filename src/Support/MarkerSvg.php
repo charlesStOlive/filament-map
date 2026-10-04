@@ -2,6 +2,7 @@
 
 namespace CharlesStOlive\FilamentMap\Support;
 
+use CharlesStOlive\FilamentMap\Models\GeoPointType;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -35,10 +36,27 @@ final class MarkerSvg
     /** @var array<string, array<string, mixed>|null> */
     private static array $shapes = [];
 
-    /** Le dessin d'une icône Blade Icons, ou null quand le nom n'en désigne aucune. */
+    /** Le nom d'une icône qui est le dessin d'un type de point : `type:<clé du type>`. */
+    public const TYPE_ICON_PREFIX = 'type:';
+
+    /**
+     * Le dessin d'une icône, ou null quand le nom n'en désigne aucune : une icône Blade Icons
+     * (`heroicon-o-map-pin`), ou le dessin d'un type de point (`type:<clé>`, voir typeDrawing()).
+     */
     public static function icon(?string $name): ?string
     {
-        if (blank($name) || ! function_exists('svg')) {
+        if (blank($name)) {
+            return null;
+        }
+
+        // Relu à chaque fois (pas de cache) : le dessin d'un type peut changer, et ce n'est qu'une requête.
+        if (str_starts_with($name, self::TYPE_ICON_PREFIX)) {
+            $type = GeoPointType::query()->where('key', substr($name, strlen(self::TYPE_ICON_PREFIX)))->first();
+
+            return $type === null ? null : self::typeDrawing($type);
+        }
+
+        if (! function_exists('svg')) {
             return null;
         }
 
@@ -49,6 +67,60 @@ final class MarkerSvg
                 return null;
             }
         })();
+    }
+
+    /**
+     * Le dessin d'un type de point, pour servir d'icône dans la zone d'un autre marqueur : sa forme SVG personnalisée,
+     * nettoyée, sans sa zone de contenu, et monochrome comme une icône (monochrome()) — elle prend la couleur de
+     * l'icône, et s'inverse avec elle. Null pour une forme fournie (épingle, cercle, étoile) ou un SVG illisible.
+     */
+    public static function typeDrawing(GeoPointType $type): ?string
+    {
+        $style = $type->marker_style ?? [];
+        $svg = ($style['shape'] ?? null) === 'svg' ? (self::shape($style['svg'] ?? null)['svg'] ?? null) : null;
+
+        return $svg === null ? null : self::monochrome($svg);
+    }
+
+    /**
+     * Un dessin d'une seule couleur, celle du texte (`currentColor`) : chaque remplissage et chaque trait qui ne sont pas
+     * `none` la prennent — attributs `fill` et `stroke`, et dans `style`. Un SVG qu'on ne peut pas relire reste tel quel.
+     */
+    public static function monochrome(string $svg): string
+    {
+        $document = new DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $loaded = $document->loadXML($svg, LIBXML_NONET);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+
+        if (! $loaded || ! $document->documentElement instanceof DOMElement) {
+            return $svg;
+        }
+
+        $keeps = fn (string $value): bool => in_array(strtolower(trim($value)), ['none', 'transparent', 'currentcolor', ''], true);
+
+        foreach (iterator_to_array((new DOMXPath($document))->query('//*')) as $element) {
+            foreach (['fill', 'stroke'] as $attribute) {
+                if ($element->hasAttribute($attribute) && ! $keeps($element->getAttribute($attribute))) {
+                    $element->setAttribute($attribute, 'currentColor');
+                }
+            }
+
+            if ($element->hasAttribute('style')) {
+                $element->setAttribute('style', preg_replace_callback(
+                    '/(^|;)\s*(fill|stroke)\s*:\s*([^;]+)/i',
+                    fn (array $match): string => $keeps($match[3]) ? $match[0] : $match[1].$match[2].':currentColor',
+                    $element->getAttribute('style'),
+                ));
+            }
+        }
+
+        return $document->saveXML($document->documentElement) ?: $svg;
     }
 
     /**

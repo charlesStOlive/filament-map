@@ -235,6 +235,12 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                     ->visible(fn (Get $get): bool => in_array($content($get), ['icon', 'image'], true))
                     ->dehydratedWhenHidden()
                     ->live(),
+                Toggle::make('marker_style.content.invert')
+                    ->label('Inverser les couleurs de la zone')
+                    ->helperText('La zone sur fond blanc, l’icône ou le texte de la couleur du point (au lieu de blanc sur la couleur du point).')
+                    ->visible(fn (Get $get): bool => in_array($content($get), ['icon', 'text'], true))
+                    ->dehydratedWhenHidden()
+                    ->live(),
                 TextInput::make('marker_style.content.value')
                     ->label('Texte')
                     ->visible(fn (Get $get): bool => $content($get) === 'text')

@@ -91,7 +91,11 @@ pourquoi pas). La vue `filament-map::partials.marker-preview` sert aussi à la l
 (`filament-map.icons.groups`), sans ceux de Filament (`exclude_sets`) — avec recherche par mots et filtre par jeu, 240
 résultats au plus. Le catalogue est servi en JSON par la route `filament-map.icons` (`filament-map.icons.middleware`,
 `web` et `auth` par défaut) ; la liste des fichiers est gardée un jour en cache (`filament-map.icon-catalog`).
-L'état est le nom de l'icône ; `->clearable(false)`, `->emptyLabel('…')`.
+L'état est le nom de l'icône ; `->clearable(false)`, `->emptyLabel('…')`. En tête du catalogue, les **dessins des types
+de points** (`type:<clé>`, `MarkerSvg::typeDrawing()`) : la forme SVG personnalisée d'un type, actif ou non, rendue
+monochrome (`MarkerSvg::monochrome()` : `fill` et `stroke` en `currentColor`) pour servir d'icône dans un autre marqueur.
+`marker_style.content.invert` pose l'icône ou le texte de la couleur du point sur un fond clair
+(`--filament-map-marker-inverted-background`, blanc par défaut).
 
 **Choisir un type** : `GeoPointTypePicker::make('…')` montre le type choisi (son marqueur, son nom, ce qu'il montre)
 et ouvre un popup de cartes carrées (comme `MapScenePicker`, deux fois plus petites) : recherche par nom, filtre par
