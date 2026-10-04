@@ -4,6 +4,7 @@ namespace CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\Pages;
 
 use CharlesStOlive\FilamentMap\Filament\Concerns\HasContextualReturnAction;
 use CharlesStOlive\FilamentMap\Filament\Resources\GeoPointTypes\GeoPointTypeResource;
+use CharlesStOlive\FilamentMap\FilamentMapPlugin;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -15,6 +16,12 @@ class EditGeoPointType extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return array_filter([$this->contextualReturnAction(), GeoPointTypeResource::replicateAction(), DeleteAction::make()]);
+        // Avec celles que l'application ajoute (FilamentMapPlugin::pointTypeActions()).
+        return array_filter([
+            $this->contextualReturnAction(),
+            ...FilamentMapPlugin::pointTypeActionsFor('edit', $this->getRecord()),
+            GeoPointTypeResource::replicateAction(),
+            DeleteAction::make(),
+        ]);
     }
 }

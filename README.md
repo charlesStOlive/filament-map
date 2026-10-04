@@ -25,6 +25,21 @@ Les ressources Cartes, Couches cartographiques, Points géographiques et Types d
 Il ne stocke plus d’actions sur `GeoPoint`. Les scénarios, déclencheurs et
 séquences d’actions appartiennent à `filament-orchestrator`.
 
+## Actions ajoutées par l'application
+
+Les pages des types de points prennent des actions fournies par l'application (une demande IA, un import…), sans que
+ce plugin en dépende :
+
+```php
+FilamentMapPlugin::make()->pointTypeActions(fn (string $page, ?GeoPointType $type): array => [
+    // $page : 'list' (en-tête de la liste des types) ou 'edit' (en-tête de la fiche ; $type est le type)
+]);
+```
+
+Leurs droits se déclarent sur la liste des types, au format de filament-permission-manager (sans en dépendre) :
+`GeoPointTypeResource::addPermissionActions(['mon-action' => 'Libellé'])`, dans un service provider de l'application ;
+`permissionActions()` les rend.
+
 ## Cluster Filament
 
 Par défaut, les ressources sont rangées dans le cluster `Cartographie`. Une

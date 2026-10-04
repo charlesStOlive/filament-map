@@ -57,6 +57,27 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
     /** @var array<string, string> Son libellé dans l'écran des rôles. */
     protected static array $permissionLabels = ['attach-media' => 'Joindre ou changer l’image de marqueur par défaut'];
 
+    /** @var array<string, string> Les actions propres ajoutées par l'application (addPermissionActions()). */
+    protected static array $extraPermissionActions = [];
+
+    /**
+     * Des actions propres que l'application ajoute à cette liste — celles des actions qu'elle pose sur ses pages
+     * (FilamentMapPlugin::pointTypeActions()), par exemple une demande IA : `action => libellé`. Avec
+     * filament-permission-manager, elles deviennent des permissions (`{liste}.{action}`, voir permissionActions()).
+     *
+     * @param  array<string, string>  $actions
+     */
+    public static function addPermissionActions(array $actions): void
+    {
+        static::$extraPermissionActions = [...static::$extraPermissionActions, ...$actions];
+    }
+
+    /** @return array<string, string> Les actions propres calculées, au format de filament-permission-manager. */
+    public static function permissionActions(): array
+    {
+        return static::$extraPermissionActions;
+    }
+
     protected static ?string $model = GeoPointType::class;
 
     protected static ?string $recordTitleAttribute = 'name';
