@@ -13,6 +13,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ReplicateAction;
+use Filament\Forms\Components\CodeEditor;
+use Filament\Forms\Components\CodeEditor\Enums\Language;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Radio;
@@ -142,14 +144,20 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                     ->placeholder('Celui de la forme')
                     ->live()
                     ->helperText('Le point de la forme posé sur la position. Vide : la pointe d’une épingle, le data-anchor d’un SVG, sinon le centre.'),
-                Textarea::make('marker_style.svg')
+                CodeEditor::make('marker_style.svg')
                     ->label('SVG personnalisé')
+                    ->language(Language::Xml)
                     ->visible(fn (Get $get): bool => $get('marker_style.shape') === 'svg')
                     // Gardé quand on essaie une autre forme : on peut y revenir sans le perdre.
                     ->dehydratedWhenHidden()
                     ->live(debounce: 600)
-                    ->helperText('Avec une viewBox. currentColor prend la couleur du point. La zone qui reçoit l’icône, l’image ou le texte est un circle, une ellipse ou un rect marqué data-slot (il n’est pas dessiné) ; sans elle, la forme reste seule. data-anchor="bottom" sur la balise svg pose sa base sur la position (centre par défaut). Scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
-                    ->rows(6)
+                    // L'éditeur ne sait pas souligner une erreur : un SVG sans currentColor le dit en rouge, au-dessus.
+                    ->hint(fn (Get $get): ?string => static::svgMissesCurrentColor($get('marker_style.svg'))
+                        ? 'Pas de currentColor : ce dessin gardera ses couleurs'
+                        : null)
+                    ->hintIcon(fn (Get $get): ?string => static::svgMissesCurrentColor($get('marker_style.svg')) ? 'heroicon-m-exclamation-triangle' : null)
+                    ->hintColor('danger')
+                    ->helperText('Pensez à mettre fill="currentColor" (ou stroke="currentColor") si vous souhaitez que le dessin prenne la couleur du point, et puisse s’afficher en négatif. Avec une viewBox. La zone qui reçoit l’icône, l’image ou le texte est un circle, une ellipse ou un rect marqué data-slot (il n’est pas dessiné) ; sans elle, la forme reste seule. data-anchor="bottom" sur la balise svg pose sa base sur la position (centre par défaut). Scripts, contenus embarqués et liens externes sont retirés ; un SVG illisible laisse place à l’épingle.')
                     ->columnSpanFull(),
                 Slider::make('marker_style.size')
                     ->label('Taille')
@@ -190,6 +198,12 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
                     ->live()
                     ->helperText('En % de sa hauteur, vers le bas.'),
             ]);
+    }
+
+    /** Un SVG saisi qui ne prend jamais la couleur du point : pas un seul `currentColor`. */
+    protected static function svgMissesCurrentColor(mixed $svg): bool
+    {
+        return is_string($svg) && filled(trim($svg)) && ! str_contains(strtolower($svg), 'currentcolor');
     }
 
     /**

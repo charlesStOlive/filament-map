@@ -80,7 +80,7 @@ Trois réglages placent le marqueur par rapport à la position du point (la croi
 
 ### SVG personnalisé
 
-Le SVG convient à une identité visuelle spécifique. Utilisez un dessin simple, avec une `viewBox` correcte, et `currentColor` pour ce qui doit prendre la couleur du point. Le rendu est nettoyé avant affichage : les scripts, contenus embarqués et liens externes sont retirés. Un SVG illisible est remplacé par l'épingle.
+Le SVG convient à une identité visuelle spécifique. Il se saisit dans un éditeur de code (coloration XML). Utilisez un dessin simple, avec une `viewBox` correcte, et `currentColor` (`fill="currentColor"`, `stroke="currentColor"`) pour ce qui doit prendre la couleur du point. Sans aucun `currentColor`, un avertissement rouge s'affiche au-dessus de l'éditeur : le dessin gardera ses propres couleurs, sans suivre celle du point ni pouvoir s'afficher en négatif. Ce n'est pas bloquant. Le rendu est nettoyé avant affichage : les scripts, contenus embarqués et liens externes sont retirés. Un SVG illisible est remplacé par l'épingle.
 
 Le SVG désigne lui-même deux choses :
 
