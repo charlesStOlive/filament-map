@@ -60,6 +60,9 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
     /** @var array<string, string> Les actions propres ajoutées par l'application (addPermissionActions()). */
     protected static array $extraPermissionActions = [];
 
+    /** @var array<string, string> Le libellé de leurs familles (addPermissionFamilies()), lu par filament-permission-manager. */
+    protected static array $permissionFamilies = [];
+
     /**
      * Des actions propres que l'application ajoute à cette liste — celles des actions qu'elle pose sur ses pages
      * (FilamentMapPlugin::pointTypeActions()), par exemple une demande IA : `action => libellé`. Avec
@@ -70,6 +73,17 @@ class GeoPointTypeResource extends Resource implements HasKnowledgeBase
     public static function addPermissionActions(array $actions): void
     {
         static::$extraPermissionActions = [...static::$extraPermissionActions, ...$actions];
+    }
+
+    /**
+     * Le libellé des familles de ces actions (`ai` => « Intelligence artificielle »), dans l'écran des rôles : sans lui,
+     * la famille s'affiche par son nom (« Ai »).
+     *
+     * @param  array<string, string>  $families
+     */
+    public static function addPermissionFamilies(array $families): void
+    {
+        static::$permissionFamilies = [...static::$permissionFamilies, ...$families];
     }
 
     /** @return array<string, string> Les actions propres calculées, au format de filament-permission-manager. */
